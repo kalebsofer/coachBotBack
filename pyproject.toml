@@ -11,6 +11,7 @@ fastapi = "^0.115.6"
 uvicorn = "^0.34.0"
 openai = "^1.59.4"
 stream-chat = "^4.20.0"
+pytest = "^8.3.4"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -29,3 +30,17 @@ line-length = 88
 [tool.flake8]
 max-line-length = 88
 extend-ignore = ["E203", "W503"]
+
+
+[tool.poetry.group.test.dependencies]
+pytest = "^8.3.4"
+httpx = "^0.28.1"
+pytest-cov = "^6.0.0"
+
+[tool.pytest.ini_options]
+pythonpath = [
+    "."
+]
+testpaths = [
+    "tests"
+]

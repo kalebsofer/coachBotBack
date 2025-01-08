@@ -1,0 +1,33 @@
+name: Pull Request Checks
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: 1.7.1
+          
+      - name: Install dependencies
+        run: poetry install --with dev,test
+        
+      - name: Run black
+        run: poetry run black . --check
+        
+      - name: Run flake8
+        run: poetry run flake8 .
+        
+      - name: Run tests
+        run: poetry run pytest 
