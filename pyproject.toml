@@ -1,0 +1,31 @@
+[tool.poetry]
+name = "coachbotback"
+version = "0.1.0"
+description = ""
+authors = ["Kaleb Sofer <kalebsofer@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = "^0.115.6"
+uvicorn = "^0.34.0"
+openai = "^1.59.4"
+stream-chat = "^4.20.0"
+
+
+[tool.poetry.group.dev.dependencies]
+black = "^24.10.0"
+flake8 = "^7.1.1"
+pre-commit = "^4.0.1"
+python-dotenv = "^1.0.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 88
+
+[tool.flake8]
+max-line-length = 88
+extend-ignore = ["E203", "W503"]
