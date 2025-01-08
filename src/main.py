@@ -1,6 +1,7 @@
 import os
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from openai import OpenAI
 from stream_chat import StreamChat
@@ -14,8 +15,26 @@ stream_client = StreamChat(
     location="dublin",
 )
 
+app = FastAPI(title="Coach Bot API")
 
-app = FastAPI()
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins in development
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+@app.get("/")
+async def root():
+    return {"message": "Coach Bot API is running"}
+
+
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy"}
 
 
 class UserInput(BaseModel):
