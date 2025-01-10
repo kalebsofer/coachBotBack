@@ -40,6 +40,13 @@ line_length = 88
 [tool.flake8]
 max-line-length = 88
 extend-ignore = ["E203", "W503"]
+exclude = [
+    ".git",
+    "__pycache__",
+    ".venv",
+    "build",
+    "dist"
+]
 
 
 [tool.poetry.group.test.dependencies]

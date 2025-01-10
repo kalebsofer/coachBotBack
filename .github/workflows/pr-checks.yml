@@ -27,7 +27,11 @@ jobs:
         run: poetry run black . --check
         
       - name: Run flake8
-        run: poetry run flake8 .
+        run: |
+          poetry run flake8 src/ tests/ \
+            --exclude=.git,__pycache__,.venv,build,dist \
+            --max-line-length=88 \
+            --extend-ignore=E203,W503
         
       - name: Run tests
         run: poetry run pytest 
