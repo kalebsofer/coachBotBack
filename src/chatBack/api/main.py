@@ -1,9 +1,10 @@
 import os
+
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
 from openai import OpenAI
+from pydantic import BaseModel, Field
 from stream_chat import StreamChat
 
 load_dotenv()
@@ -20,7 +21,11 @@ app = FastAPI(title="Coach Bot API")
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins in development
+    allow_origins=[
+        "http://localhost:3000",  # React dev server
+        "http://localhost:19006",  # Expo web
+        "exp://localhost:19000",  # Expo Go
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

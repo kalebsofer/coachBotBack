@@ -4,6 +4,9 @@ version = "0.1.0"
 description = ""
 authors = ["Kaleb Sofer <kalebsofer@gmail.com>"]
 readme = "README.md"
+packages = [
+    { include = "chatBack", from = "src" }
+]
 
 [tool.poetry.dependencies]
 python = "^3.12"
@@ -26,6 +29,13 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.black]
 line-length = 88
+target-version = ['py312']
+include = '\.pyi?$'
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
 
 [tool.flake8]
 max-line-length = 88

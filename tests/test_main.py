@@ -1,14 +1,15 @@
 from unittest.mock import Mock, patch
+
 import pytest
+from api.main import app
 from fastapi.testclient import TestClient
-from src.main import app
 
 client = TestClient(app)
 
 
 @pytest.fixture
 def mock_openai():
-    with patch("src.main.client") as mock:
+    with patch("api.main.client") as mock:
         mock.chat.completions.create.return_value.choices = [
             Mock(message=Mock(content="Test AI response"))
         ]
@@ -17,7 +18,7 @@ def mock_openai():
 
 @pytest.fixture
 def mock_stream():
-    with patch("src.main.stream_client") as mock:
+    with patch("api.main.stream_client") as mock:
         mock.channel.return_value.create.return_value = None
         mock.channel.return_value.send_message.return_value = None
         yield mock
