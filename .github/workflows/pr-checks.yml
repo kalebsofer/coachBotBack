@@ -7,6 +7,10 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      OPENAI_API_KEY: "dummy-key-for-testing"
+      STREAM_API_KEY: "dummy-stream-key"
+      STREAM_API_SECRET: "dummy-stream-secret"
     steps:
       - uses: actions/checkout@v4
       
