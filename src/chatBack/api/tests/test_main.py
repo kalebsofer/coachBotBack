@@ -3,8 +3,10 @@ from unittest.mock import Mock, patch
 import pytest
 from fastapi.testclient import TestClient
 
-# Mock OpenAI initialization
-with patch("openai.OpenAI") as _mock_openai_init:
+with (
+    patch("openai.OpenAI") as _mock_openai_init,
+    patch("stream_chat.StreamChat") as _mock_stream_init,
+):
     from chatBack.api.main import app
 
 client = TestClient(app)
