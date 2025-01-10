@@ -4,6 +4,9 @@ version = "0.1.0"
 description = ""
 authors = ["Kaleb Sofer <kalebsofer@gmail.com>"]
 readme = "README.md"
+packages = [
+    { include = "chatBack", from = "src" }
+]
 
 [tool.poetry.dependencies]
 python = "^3.12"
@@ -26,10 +29,24 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.black]
 line-length = 88
+target-version = ['py312']
+include = '\.pyi?$'
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
 
 [tool.flake8]
 max-line-length = 88
 extend-ignore = ["E203", "W503"]
+exclude = [
+    ".git",
+    "__pycache__",
+    ".venv",
+    "build",
+    "dist"
+]
 
 
 [tool.poetry.group.test.dependencies]
@@ -38,9 +55,7 @@ httpx = "^0.28.1"
 pytest-cov = "^6.0.0"
 
 [tool.pytest.ini_options]
-pythonpath = [
-    "."
-]
+pythonpath = ["src"]
 testpaths = [
-    "tests"
+    "src/chatBack/api/tests",
 ]
