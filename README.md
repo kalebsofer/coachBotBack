@@ -7,7 +7,7 @@ Backend service for CoachBot, built with FastAPI and Python.
 ```
 coachBotBack/
 ├── src/
-│ └── chatBack/
+│ └── /
 │ ├─── api/
 │ │     ├── __init__.py
 │ │     └── main.py
@@ -84,7 +84,7 @@ poetry shell
 2. Start the development server:
 
 ```bash
-poetry run uvicorn chatBack.api.main:app --reload
+poetry run uvicorn .api.main:app --reload
 ```
 
 The API will be available at `http://localhost:8000`

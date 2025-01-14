@@ -7,14 +7,14 @@ with (
     patch("openai.OpenAI") as _mock_openai_init,
     patch("stream_chat.StreamChat") as _mock_stream_init,
 ):
-    from chatBack.api.main import app
+    from app.main import app
 
 client = TestClient(app)
 
 
 @pytest.fixture
 def mock_openai():
-    with patch("chatBack.api.main.client") as mock:
+    with patch("app.main.client") as mock:
         mock.chat.completions.create.return_value.choices = [
             Mock(message=Mock(content="Test AI response"))
         ]
@@ -23,7 +23,7 @@ def mock_openai():
 
 @pytest.fixture
 def mock_stream():
-    with patch("chatBack.api.main.stream_client") as mock:
+    with patch("app.main.stream_client") as mock:
         mock.channel.return_value.create.return_value = None
         mock.channel.return_value.send_message.return_value = None
         yield mock
