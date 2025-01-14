@@ -10,6 +10,13 @@ jobs:
     strategy:
       matrix:
         service: [api, worker]
+    
+    env:
+      OPENAI_API_KEY: "test-key"
+      STREAM_API_KEY: "test-stream-key"
+      STREAM_SECRET: "test-stream-secret"
+      RABBITMQ_HOST: "localhost"
+      QUEUE_NAME: "test_queue"
 
     steps:
     - uses: actions/checkout@v4
