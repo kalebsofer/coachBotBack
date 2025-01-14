@@ -24,18 +24,22 @@ jobs:
         with:
           version: 1.7.1
           
-      - name: Install dependencies
-        run: poetry install --with dev,test
+      - name: Install API service dependencies
+        working-directory: ./src/api
+        run: poetry install --with test
         
       - name: Run black
+        working-directory: ./src/api
         run: poetry run black . --check
         
       - name: Run flake8
+        working-directory: ./src/api
         run: |
-          poetry run flake8 src/ \
+          poetry run flake8 app/ tests/ \
             --exclude=.git,__pycache__,.venv,build,dist \
             --max-line-length=88 \
             --extend-ignore=E203,W503
         
-      - name: Run tests
+      - name: Run API tests
+        working-directory: ./src/api
         run: poetry run pytest 
