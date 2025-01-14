@@ -17,6 +17,8 @@ python-dotenv = "^1.0.1"
 pytest = "^8.3.4"
 httpx = "^0.28.1"
 pytest-cov = "^6.0.0"
+black = "^24.10.0"
+flake8 = "^7.1.1"
 
 [build-system]
 requires = ["poetry-core"]
@@ -24,4 +26,20 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.pytest.ini_options]
 pythonpath = ["."]
-testpaths = ["tests"] 
+testpaths = ["tests"]
+
+[tool.black]
+line-length = 88
+target-version = ['py312']
+include = '\.pyi?$'
+
+[tool.flake8]
+max-line-length = 88
+extend-ignore = ["E203", "W503"]
+exclude = [
+    ".git",
+    "__pycache__",
+    ".venv",
+    "build",
+    "dist"
+] 
