@@ -1,4 +1,4 @@
-name: Pull Request Checks
+name: PR Checks
 
 on:
   pull_request:
@@ -7,39 +7,49 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    env:
-      OPENAI_API_KEY: "dummy-key-for-testing"
-      STREAM_API_KEY: "dummy-stream-key"
-      STREAM_API_SECRET: "dummy-stream-secret"
+    strategy:
+      matrix:
+        service: [api, worker]
+
     steps:
-      - uses: actions/checkout@v4
-      
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-          
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-        with:
-          version: 1.7.1
-          
-      - name: Install API service dependencies
-        working-directory: ./src/api
-        run: poetry install --with test
-        
-      - name: Run black
-        working-directory: ./src/api
-        run: poetry run black . --check
-        
-      - name: Run flake8
-        working-directory: ./src/api
-        run: |
-          poetry run flake8 app/ tests/ \
-            --exclude=.git,__pycache__,.venv,build,dist \
-            --max-line-length=88 \
-            --extend-ignore=E203,W503
-        
-      - name: Run API tests
-        working-directory: ./src/api
-        run: poetry run pytest 
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install Poetry
+      run: |
+        curl -sSL https://install.python-poetry.org | python3 -
+
+    - name: Install Dependencies and Run Tests
+      run: |
+        cd src/${{ matrix.service }}
+        poetry install
+        poetry run pytest --cov=app tests/
+
+  lint:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [api, worker]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Install Poetry
+      run: |
+        curl -sSL https://install.python-poetry.org | python3 -
+
+    - name: Lint
+      run: |
+        cd src/${{ matrix.service }}
+        poetry install
+        poetry run black . --check
+        poetry run flake8 . 
