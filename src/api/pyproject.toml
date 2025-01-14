@@ -1,0 +1,45 @@
+[tool.poetry]
+name = "coach-bot-api"
+version = "0.1.0"
+description = "Coach Bot API Service"
+authors = ["Kaleb Sofer <kalebsofer@gmail.com>"]
+packages = [{ include = "app" }]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = "^0.115.6"
+uvicorn = "^0.34.0"
+openai = "^1.59.4"
+stream-chat = "^4.20.0"
+python-dotenv = "^1.0.1"
+
+[tool.poetry.group.test.dependencies]
+pytest = "^8.3.4"
+httpx = "^0.28.1"
+pytest-cov = "^6.0.0"
+black = "^24.10.0"
+flake8 = "^7.0.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[tool.black]
+line-length = 88
+target-version = ['py312']
+include = '\.pyi?$'
+
+[tool.flake8]
+max-line-length = 88
+extend-ignore = ["E203", "W503"]
+exclude = [
+    ".git",
+    "__pycache__",
+    ".venv",
+    "build",
+    "dist"
+] 

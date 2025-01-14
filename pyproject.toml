@@ -1,27 +1,17 @@
 [tool.poetry]
 name = "coachbotback"
 version = "0.1.0"
-description = ""
+description = "Coach Bot Backend Services"
 authors = ["Kaleb Sofer <kalebsofer@gmail.com>"]
 readme = "README.md"
-packages = [
-    { include = "chatBack", from = "src" }
-]
 
 [tool.poetry.dependencies]
 python = "^3.12"
-fastapi = "^0.115.6"
-uvicorn = "^0.34.0"
-openai = "^1.59.4"
-stream-chat = "^4.20.0"
-pytest = "^8.3.4"
-
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.10.0"
 flake8 = "^7.1.1"
 pre-commit = "^4.0.1"
-python-dotenv = "^1.0.1"
 
 [build-system]
 requires = ["poetry-core"]
@@ -46,16 +36,4 @@ exclude = [
     ".venv",
     "build",
     "dist"
-]
-
-
-[tool.poetry.group.test.dependencies]
-pytest = "^8.3.4"
-httpx = "^0.28.1"
-pytest-cov = "^6.0.0"
-
-[tool.pytest.ini_options]
-pythonpath = ["src"]
-testpaths = [
-    "src/chatBack/api/tests",
 ]
