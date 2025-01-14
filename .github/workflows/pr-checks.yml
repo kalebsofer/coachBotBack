@@ -20,8 +20,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-      with:
-        fetch-depth: 0  # Fetch all history for all branches and tags
 
     - name: Set up Python
       uses: actions/setup-python@v5
@@ -46,8 +44,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-      with:
-        fetch-depth: 0  # Fetch all history for all branches and tags
 
     - name: Set up Python
       uses: actions/setup-python@v5
@@ -58,18 +54,9 @@ jobs:
       run: |
         curl -sSL https://install.python-poetry.org | python3 -
 
-    - name: Get changed files
-      id: changed-files
-      run: |
-        echo "files=$(git diff --name-only origin/${{ github.base_ref }} ${{ github.sha }} | grep "^src/${{ matrix.service }}.*\.py$" | tr '\n' ' ')" >> $GITHUB_OUTPUT
-
     - name: Lint
-      if: steps.changed-files.outputs.files != ''
       run: |
         cd src/${{ matrix.service }}
         poetry install
-        for file in ${{ steps.changed-files.outputs.files }}; do
-          echo "Checking $file"
-          poetry run black $file --check
-          poetry run flake8 $file --max-line-length=88 --extend-ignore=E203,W503
-        done 
+        poetry run black . --check
+        poetry run flake8 . --max-line-length=88 --extend-ignore=E203,W503 
