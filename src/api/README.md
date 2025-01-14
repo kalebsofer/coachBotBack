@@ -44,8 +44,7 @@ STREAM_SECRET=your_stream_secret
 ## Container
 
 ```bash
-Build and run from root dir: 
-
+# Build and run from root dir 
 docker build -t coach-bot-api -f docker/api/Dockerfile .
 
 docker run -d \
