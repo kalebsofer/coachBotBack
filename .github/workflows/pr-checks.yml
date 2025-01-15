@@ -59,4 +59,4 @@ jobs:
         cd src/${{ matrix.service }}
         poetry install
         poetry run black . --check
-        poetry run flake8 . --max-line-length=88 --extend-ignore=E203,W503 
+        poetry run flake8 . --max-line-length=88 --extend-ignore=E203,W503,W291 

@@ -1,83 +1,108 @@
 # API Service
 
-The API service is a FastAPI application that handles real-time chat interactions between users and the AI coaching system.
+The API service handles HTTP requests, message processing, and integrations with OpenAI, Stream Chat, and the database.
 
-## Core Functionality
+## Core Components
 
-### Endpoints
+### Main Application (`app/main.py`)
+- FastAPI application setup and configuration
+- Route handlers for:
+  - Health checks and monitoring
+  - Message processing and AI responses
+  - Chat management
+- Integrations with:
+  - OpenAI for AI responses
+  - Stream Chat for real-time messaging
+  - Database for persistence
+- Error handling and logging
+- CORS and middleware configuration
 
-- `GET /` - Root endpoint, returns service status
-- `GET /health` - Health check endpoint, monitors API, OpenAI, and Stream services
-- `POST /generate-response` - Main endpoint for generating AI responses
+### Database Utilities (`app/db.py`)
+- Database session management
+- Async session dependency for FastAPI
+- Connection pooling and lifecycle management
+- Integration with SQLAlchemy models
+- Session cleanup and error handling
 
-### Features
+### API Utilities (`app/utils.py`)
+- Health check functionality
+- Route discovery and documentation
+- Logging configuration
+- Common helper functions
+- API status monitoring
 
-- Real-time chat using Stream Chat
-- AI responses powered by OpenAI's GPT-4
-- CORS support for web and mobile clients
+## Technology Stack
+
+### FastAPI
+- Modern, async web framework
+- OpenAPI documentation
+- Type hints and validation
+- Dependency injection
+- High performance
+
+### OpenAI Integration
+- GPT-4 model integration
+- Async API calls
+- Error handling
+- Response processing
+
+### Stream Chat
+- Real-time messaging
+- Channel management
+- User authentication
+- Message synchronization
 
 ## Development
 
 ### Prerequisites
-
 - Python 3.12+
-- Poetry
-- Docker
+- Poetry for dependency management
+- OpenAI API key
+- Stream Chat credentials
+- PostgreSQL database
 
-### Local Setup
+### Environment Setup
 ```bash
+# Install dependencies
 poetry install
-poetry run pytest
-poetry run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+# Set up environment variables
+cp .env.example .env
+# Edit .env with your credentials
 ```
+
+### Running the API
+```bash
+# Development
+poetry run uvicorn app.main:app --reload
+
+# Production
+poetry run uvicorn app.main:app --host 0.0.0.0 --port 8000
+```
+
+### Docker
+```bash
+# Build container
+docker-compose build api
+
+# Run service
+docker-compose up -d api
+
+# View logs
+docker-compose logs -f api
+```
+
+## Configuration
 
 ### Environment Variables
+- `OPENAI_API_KEY`: OpenAI API key
+- `STREAM_API_KEY`: Stream Chat API key
+- `STREAM_SECRET`: Stream Chat secret
+- `ALLOWED_ORIGINS`: CORS allowed origins
+- `DATABASE_URL`: PostgreSQL connection string
 
-Required environment variables (see `.env.example` in root directory):
-
-```
-OPENAI_API_KEY=your_openai_api_key
-STREAM_API_KEY=your_stream_api_key
-STREAM_SECRET=your_stream_secret
-```
-
-## Container
-
-```bash
-# Build and run from root dir 
-docker build -t coach-bot-api -f docker/api/Dockerfile .
-
-docker run -d \
--p 8000:8000 \
---env-file .env \
---name coach-bot-api \
-coach-bot-api
-```
-
-
-### Testing
-
-Tests use mocked external services (OpenAI and Stream), see `tests/test_main.py`.
-
-```bash
-poetry run pytest
-```
-
-
-## API Documentation
-
-Once running, API documentation is available at:
-- Swagger UI: `http://localhost:8000/docs`
-- ReDoc: `http://localhost:8000/redoc`
-
-## Integration
-
-### Client Applications
-- Web client (React): `http://localhost:3000`
-- Mobile client (Expo):
-  - Web: `http://localhost:19006`
-  - Development: `exp://localhost:19000`
-
-### External Services
-- OpenAI GPT-4 for message generation
-- Stream Chat for real-time messaging
+### API Routes
+- `/`: Root endpoint, service status
+- `/health`: Health check endpoint
+- `/generate-response`: AI response generation
+- `/api/v1/chat/message`: Message handling endpoint

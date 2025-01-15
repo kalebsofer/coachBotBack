@@ -4,12 +4,14 @@ from typing import AsyncGenerator
 from dotenv import load_dotenv
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-load_dotenv()
+# Ensure the correct path to the .env file
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "../../../.env"))
 
 # Database URL format: postgresql+asyncpg://user:password@host:port/dbname
-DATABASE_URL = os.getenv(
-    "DATABASE_URL", "postgresql+asyncpg://postgres:postgres@localhost:5432/coach_bot"
-)
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+if not DATABASE_URL:
+    raise ValueError("DATABASE_URL is not set. Please check your .env file.")
 
 engine = create_async_engine(
     DATABASE_URL,

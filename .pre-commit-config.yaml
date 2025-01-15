@@ -13,7 +13,7 @@ repos:
         additional_dependencies: [
           'flake8-pyproject==1.2.3',
         ]
-        args: ["--max-line-length=88", "--extend-ignore=E203,W503"]
+        args: ["--max-line-length=88", "--extend-ignore=E203,W503,W291"]
 
   - repo: https://github.com/pycqa/isort
     rev: 5.13.2
@@ -21,3 +21,10 @@ repos:
       - id: isort
         args: ["--profile", "black", "--filter-files"]
         stages: [pre-commit]
+
+  - repo: https://github.com/PyCQA/autoflake
+    rev: v1.4
+    hooks:
+      - id: autoflake
+        additional_dependencies: ['setuptools', 'wheel']
+        args: ["--remove-all-unused-imports", "--remove-unused-variables"]

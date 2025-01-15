@@ -7,16 +7,20 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-RUN curl -sSL https://install.python-poetry.org | python3 -
-
-COPY src/api/ ./
+RUN curl -sSL https://install.python-poetry.org | python3 - \
+    && ln -s /root/.local/bin/poetry /usr/local/bin/poetry
 
 ENV POETRY_NO_INTERACTION=1 \
     POETRY_VIRTUALENVS_CREATE=false \
-    PATH="/root/.local/bin:$PATH"
+    PYTHONPATH=/app/src \
+    PATH="/usr/local/bin:$PATH"
 
-RUN poetry install --only main
+COPY src/api/pyproject.toml ./pyproject.toml
+COPY src/api/poetry.lock ./poetry.lock
 
-EXPOSE 8000
+RUN poetry install --only main --no-root
 
-CMD ["poetry", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+COPY src/api/ ./src/api/
+COPY src/db/ ./src/db/
+
+CMD ["python", "-m", "uvicorn", "api.app.main:app", "--host", "0.0.0.0", "--port", "8000"]
