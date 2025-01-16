@@ -2,16 +2,17 @@ import asyncio
 from logging.config import fileConfig
 
 from alembic import context
-from app.database import DATABASE_URL
-from app.models import Base
+from core.database import DATABASE_URL
+from core.models import Base
 from dotenv import load_dotenv
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 load_dotenv(dotenv_path="../../.env")
+print("Loaded DATABASE_URL:", DATABASE_URL)
 
-# this is the Alembic Config object
+# Alembic Config object
 config = context.config
 
 # Interpret the config file for Python logging

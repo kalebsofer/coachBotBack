@@ -3,7 +3,7 @@ name = "coach-bot-db"
 version = "0.1.0"
 description = "Coach Bot Database Service"
 authors = ["Kaleb Sofer <kalebsofer@gmail.com>"]
-packages = [{ include = "app" }]
+packages = [{ include = "core" }]
 
 [tool.poetry.dependencies]
 python = "^3.12"

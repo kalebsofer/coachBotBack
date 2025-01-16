@@ -1,26 +1,26 @@
-FROM python:3.12-slim
+FROM python:3.12-slim as builder
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    POETRY_NO_INTERACTION=1 \
+    POETRY_VIRTUALENVS_CREATE=false
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
     curl \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
+    build-essential && \
+    pip install poetry && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
-RUN curl -sSL https://install.python-poetry.org | python3 - \
-    && ln -s /root/.local/bin/poetry /usr/local/bin/poetry
+COPY src/api/pyproject.toml src/api/poetry.lock ./
+RUN poetry install --no-root
 
-ENV POETRY_NO_INTERACTION=1 \
-    POETRY_VIRTUALENVS_CREATE=false \
-    PYTHONPATH=/app/src \
-    PATH="/usr/local/bin:$PATH"
+COPY src/api/ ./
+COPY src/db/core ./db/core
 
-COPY src/api/pyproject.toml ./pyproject.toml
-COPY src/api/poetry.lock ./poetry.lock
+ENV PATH="/usr/local/bin:/root/.local/bin:$PATH"
 
-RUN poetry install --only main --no-root
-
-COPY src/api/ ./src/api/
-COPY src/db/ ./src/db/
-
-CMD ["python", "-m", "uvicorn", "api.app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["poetry", "run", "uvicorn", "core.main:app", "--host", "0.0.0.0", "--port", "8000"]

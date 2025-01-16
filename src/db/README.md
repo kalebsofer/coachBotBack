@@ -4,19 +4,19 @@ The database service manages data persistence and access for the Coach Bot syste
 
 ## Core Components
 
-### Models (`app/models.py`)
+### Models (`core/models.py`)
 - SQLAlchemy ORM models defining database schema
 - Uses UUID primary keys for distributed safety
 - Implements common mixins for timestamps and IDs
 - Handles relationships between entities (User, Chat, Message, Log)
 
-### Database Connection (`app/database.py`)
+### Database Connection (`core/database.py`)
 - Manages async database connections using SQLAlchemy 2.0
 - Implements connection pooling for performance
 - Provides session management and dependency injection
 - Uses asyncpg for better async performance
 
-### CRUD Operations (`app/crud.py`)
+### CRUD Operations (`core/crud.py`)
 CRUD (Create, Read, Update, Delete) operations provide:
 - Clean interface for database interactions
 - Type-safe data access through generics
@@ -25,7 +25,7 @@ CRUD (Create, Read, Update, Delete) operations provide:
 - Reusable base operations
 - Model-specific query methods
 
-### Schemas (`app/schemas.py`)
+### Schemas (`core/schemas.py`)
 - Pydantic models for data validation
 - Separate schemas for creation and reading
 - Type conversion and validation
@@ -45,8 +45,6 @@ CRUD (Create, Read, Update, Delete) operations provide:
 - Robust relational database
 - Strong UUID support
 - JSONB for flexible storage
-- Excellent async support
-- Production-ready reliability
 
 ### SQLAlchemy
 - Python's most powerful ORM

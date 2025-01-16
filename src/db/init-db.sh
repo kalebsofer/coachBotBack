@@ -2,19 +2,17 @@
 set -e
 
 # Wait for database to be ready
-until pg_isready; do
-    echo "Waiting for database..."
+until pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"; do
+    echo "Waiting for database to be ready..."
     sleep 2
 done
 
-echo "Database is ready, running migrations..."
+cd /app
 
 # Run migrations
-cd /db
 poetry run alembic upgrade head
 
-echo "Running database initialization..."
-# Run initialization script
-poetry run python -m app.init_db
+# Initialize database with required data
+poetry run python -m core.init_db
 
 echo "Database initialization completed" 

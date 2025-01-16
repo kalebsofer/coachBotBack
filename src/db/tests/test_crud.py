@@ -2,9 +2,9 @@ import uuid
 from typing import AsyncGenerator
 
 import pytest
-from app.crud import chat, log, message, user
-from app.database import Base
-from app.schemas import ChatCreate, LogCreate, MessageCreate, UserCreate
+from core.crud import chat, log, message, user
+from core.database import Base
+from core.schemas import ChatCreate, LogCreate, MessageCreate, UserCreate
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.pool import StaticPool
 

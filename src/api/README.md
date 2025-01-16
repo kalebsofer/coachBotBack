@@ -74,10 +74,10 @@ cp .env.example .env
 ### Running the API
 ```bash
 # Development
-poetry run uvicorn app.main:app --reload
+poetry run uvicorn core.main:app --reload
 
 # Production
-poetry run uvicorn app.main:app --host 0.0.0.0 --port 8000
+poetry run uvicorn core.main:app --host 0.0.0.0 --port 8000
 ```
 
 ### Docker

@@ -4,8 +4,8 @@ version = "0.1.0"
 description = "Coach Bot API Service"
 authors = ["Kaleb Sofer <kalebsofer@gmail.com>"]
 packages = [
-    { include = "app" },
-    { include = "src", from = "../.." },
+    { include = "core" },
+    { include = "db", from = "." }
 ]
 
 [tool.poetry.dependencies]
@@ -49,4 +49,8 @@ exclude = [
     ".venv",
     "build",
     "dist"
-] 
+]
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.0.2"
+pytest-asyncio = "^0.23.5" 

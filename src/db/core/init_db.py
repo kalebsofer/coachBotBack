@@ -1,9 +1,9 @@
 import asyncio
 import logging
 
-from app.crud import user
-from app.database import AsyncSessionLocal
-from app.schemas import UserCreate
+from core.crud import user
+from core.database import AsyncSessionLocal
+from core.schemas import UserCreate
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

@@ -1,50 +1,46 @@
-FROM python:3.12-slim as python-base
+FROM python:3.12-slim as builder
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PIP_NO_CACHE_DIR=off \
-    PIP_DISABLE_PIP_VERSION_CHECK=on \
-    PIP_DEFAULT_TIMEOUT=100 \
-    POETRY_HOME="/opt/poetry" \
-    POETRY_VIRTUALENVS_CREATE=false \
     POETRY_NO_INTERACTION=1 \
-    POETRY_VERSION=1.7.1 \
-    PATH="/opt/poetry/bin:$PATH" \
-    POETRY_INSTALL_OPTS="--no-interaction --no-ansi --no-dev"
-
-FROM python-base as builder
-
-RUN apt-get update && apt-get install -y \
-    curl \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install Poetry - properly add to PATH
-RUN curl -sSL https://install.python-poetry.org | python3 - && \
-    ln -s /root/.local/bin/poetry /usr/local/bin/poetry
+    POETRY_VIRTUALENVS_CREATE=false
 
 WORKDIR /app
-COPY pyproject.toml poetry.lock ./
-COPY src/db ./db/
 
-RUN poetry install --only main --no-root
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    curl \
+    build-essential && \
+    pip install poetry && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY src/db/pyproject.toml src/db/poetry.lock ./
+RUN poetry install --no-root
+COPY src/db/ ./
 
 FROM postgres:16
 
-COPY --from=python-base /usr/local /usr/local
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    python3 \
+    python3-pip \
+    python3-venv && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
 COPY --from=builder /app /app
-
-WORKDIR /app
-
+COPY --from=builder /usr/local/lib/python3.12 /usr/local/lib/python3.12
 COPY src/db/init-db.sh /docker-entrypoint-initdb.d/
 RUN chmod +x /docker-entrypoint-initdb.d/init-db.sh
 
 ENV POSTGRES_USER=postgres \
     POSTGRES_PASSWORD=postgres \
     POSTGRES_DB=coach_bot \
-    PYTHONPATH=/app
+    PATH="/usr/local/bin:/root/.local/bin:$PATH" \
+    LD_LIBRARY_PATH="/usr/local/lib:${LD_LIBRARY_PATH}"
 
-HEALTHCHECK --interval=5s --timeout=5s --retries=3 \
-    CMD pg_isready -U postgres || exit 1
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+    CMD pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}
 
 EXPOSE 5432

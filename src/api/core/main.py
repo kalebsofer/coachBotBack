@@ -10,9 +10,9 @@ from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 from stream_chat import StreamChat
 
-from db.app.crud import log as log_crud
-from db.app.crud import message as message_crud
-from db.app.schemas import LogCreate, MessageCreate
+from db.core.crud import log as log_crud
+from db.core.crud import message as message_crud
+from db.core.schemas import LogCreate, MessageCreate
 
 from .db import get_db
 
