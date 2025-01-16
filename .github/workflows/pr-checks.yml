@@ -32,7 +32,9 @@ jobs:
 
     - name: Install Dependencies and Run Tests
       run: |
-        cd src/${{ matrix.service }}
+        cd src/db
+        poetry install
+        cd ../api
         poetry config virtualenvs.create false
         poetry install
         poetry run pytest --cov=core tests/

@@ -2,6 +2,9 @@ import logging
 import os
 import uuid
 
+from coach_bot_db.core.crud import log as log_crud
+from coach_bot_db.core.crud import message as message_crud
+from coach_bot_db.core.schemas import LogCreate, MessageCreate
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -9,10 +12,6 @@ from openai import OpenAI
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 from stream_chat import StreamChat
-
-from db.core.crud import log as log_crud
-from db.core.crud import message as message_crud
-from db.core.schemas import LogCreate, MessageCreate
 
 from .db import get_db
 
@@ -159,7 +158,6 @@ async def send_message(message: MessageRequest, db: AsyncSession = Depends(get_d
         except Exception as stream_error:
             logger.error(f"Stream API error: {str(stream_error)}")
             # Don't fail the whole request if Stream fails
-            pass
 
         # 4. Generate AI response if needed
         try:
@@ -186,7 +184,6 @@ async def send_message(message: MessageRequest, db: AsyncSession = Depends(get_d
         except Exception as ai_error:
             logger.error(f"AI response error: {str(ai_error)}")
             # Don't fail if AI generation fails
-            pass
 
         return {
             "status": "success",
