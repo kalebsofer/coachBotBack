@@ -10,8 +10,6 @@ from sqlalchemy.sql import func
 class Base(AsyncAttrs, DeclarativeBase):
     """Base class for all models."""
 
-    pass
-
 
 class UUIDMixin:
     """Mixin for UUID primary keys."""

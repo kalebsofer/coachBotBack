@@ -15,8 +15,6 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     """Schema for creating a User."""
 
-    pass
-
 
 class UserRead(UserBase):
     """Schema for reading a User."""
@@ -39,8 +37,6 @@ class ChatBase(BaseModel):
 
 class ChatCreate(ChatBase):
     """Schema for creating a Chat."""
-
-    pass
 
 
 class ChatRead(ChatBase):
@@ -65,8 +61,6 @@ class MessageBase(BaseModel):
 class MessageCreate(MessageBase):
     """Schema for creating a Message."""
 
-    pass
-
 
 class MessageRead(MessageBase):
     """Schema for reading a Message."""
@@ -89,8 +83,6 @@ class LogBase(BaseModel):
 
 class LogCreate(LogBase):
     """Schema for creating a Log."""
-
-    pass
 
 
 class LogRead(LogBase):

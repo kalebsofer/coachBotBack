@@ -28,6 +28,11 @@ pytest-cov = "^6.0.0"
 black = "^24.10.0"
 flake8 = "^7.0.0"
 
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.0.2"
+pytest-asyncio = "^0.23.5"
+pre-commit = "^3.6.0"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
@@ -50,8 +55,4 @@ exclude = [
     ".venv",
     "build",
     "dist"
-]
-
-[tool.poetry.group.dev.dependencies]
-pytest = "^8.0.2"
-pytest-asyncio = "^0.23.5" 
+] 
