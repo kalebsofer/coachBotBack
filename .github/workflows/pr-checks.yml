@@ -17,7 +17,6 @@ jobs:
       STREAM_SECRET: "test-stream-secret"
       RABBITMQ_HOST: "localhost"
       QUEUE_NAME: "test_queue"
-      PYTHONPATH: ${{ github.workspace }}/src
 
     steps:
     - uses: actions/checkout@v4
@@ -31,14 +30,21 @@ jobs:
       run: |
         curl -sSL https://install.python-poetry.org | python3 -
 
-    - name: Install Dependencies and Run Tests
+    - name: Set up Poetry environment
       run: |
-        cd src/db
+        poetry config virtualenvs.in-project true
+        poetry config virtualenvs.create true
+
+    - name: Install DB package
+      working-directory: src/db
+      run: |
         poetry install
-        cd ../${{ matrix.service }}
-        poetry config virtualenvs.create false
+
+    - name: Run tests for ${{ matrix.service }}
+      working-directory: src/${{ matrix.service }}
+      run: |
         poetry install
-        poetry run pytest --cov=core tests/
+        PYTHONPATH=${{ github.workspace }}/src poetry run pytest --cov=core tests/
 
   lint:
     runs-on: ubuntu-latest
