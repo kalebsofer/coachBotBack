@@ -1,24 +1,25 @@
 [tool.poetry]
-name = "coach-bot-worker"
+name = "coach-bot-db"
 version = "0.1.0"
-description = "Coach Bot Worker Service"
+description = "Coach Bot Database Service"
 authors = ["Kaleb Sofer <kalebsofer@gmail.com>"]
-packages = [
-    { include = "core" }
-]
+packages = [{ include = "core" }]
 
 [tool.poetry.dependencies]
 python = "^3.12"
-pika = "^1.3.1"
+sqlalchemy = "^2.0.28"
+alembic = "^1.13.1"
+psycopg2-binary = "^2.9.9"
+asyncpg = "^0.29.0"
+pydantic = {extras = ["email"], version = "^2.6.3"}
 python-dotenv = "^1.0.1"
-openai = "^1.59.4"
-stream-chat = "^4.20.0"
+aiosqlite = "^0.19.0"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^8.0.2"
 pytest-asyncio = "^0.23.5"
-pytest-cov = "^6.0.0"
-black = "^24.10.0"
+pytest-cov = "^4.1.0"
+black = "^24.2.0"
 flake8 = "^7.0.0"
 
 [build-system]
@@ -26,12 +27,9 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.pytest.ini_options]
-asyncio_mode = "auto"
 pythonpath = ["."]
 testpaths = ["tests"]
-
-[tool.pytest-asyncio]
-scope = "function"
+asyncio_mode = "auto"
 
 [tool.black]
 line-length = 88

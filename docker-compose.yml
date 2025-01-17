@@ -35,6 +35,37 @@ services:
       rabbitmq:
         condition: service_healthy
 
+  postgres:
+    container_name: coach-bot-postgres
+    build:
+      context: .
+      dockerfile: docker/database/Dockerfile
+    ports:
+      - "5432:5432"
+    env_file: .env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    environment:
+      - PYTHONPATH=/db
+
+  pgadmin:
+    container_name: coach-bot-pgadmin
+    image: dpage/pgadmin4
+    env_file: .env
+    ports:
+      - "5050:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 networks:
   default:
     name: coach-bot-network 
+
+volumes:
+  postgres_data: 

@@ -3,22 +3,37 @@ name = "coach-bot-api"
 version = "0.1.0"
 description = "Coach Bot API Service"
 authors = ["Kaleb Sofer <kalebsofer@gmail.com>"]
-packages = [{ include = "app" }]
+packages = [
+    { include = "core" }
+]
 
 [tool.poetry.dependencies]
 python = "^3.12"
-fastapi = "^0.115.6"
-uvicorn = "^0.34.0"
-openai = "^1.59.4"
-stream-chat = "^4.20.0"
+fastapi = "^0.109.0"
+uvicorn = "^0.27.0"
 python-dotenv = "^1.0.1"
+openai = "^1.0.0"
+stream-chat = "^4.0.0"
+sqlalchemy = "^2.0.28"
+asyncpg = "^0.29.0"
+pydantic = {extras = ["email"], version = "^2.6.3"}
+gunicorn = "^21.2.0"
+coach-bot-db = { path = "../db" }
+httpx = "^0.24.1"
 
 [tool.poetry.group.test.dependencies]
-pytest = "^8.3.4"
-httpx = "^0.28.1"
+pytest = "^8.0.2"
+pytest-asyncio = "^0.23.5"
 pytest-cov = "^6.0.0"
+pytest-mock = "^3.12.0"
 black = "^24.10.0"
 flake8 = "^7.0.0"
+httpx = "^0.24.1"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.0.2"
+pytest-asyncio = "^0.23.5"
+pre-commit = "^3.6.0"
 
 [build-system]
 requires = ["poetry-core"]

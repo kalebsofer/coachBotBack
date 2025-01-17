@@ -21,38 +21,38 @@ stream_client = StreamChat(
 )
 
 
-def process_message(message: Dict[str, Any]) -> None:
+async def process_message(message: Dict[str, Any]) -> None:
     """Process a message from the queue."""
     try:
-        response = openai_client.chat.completions.create(
+        response = await openai_client.chat.completions.create(
             model="gpt-4", messages=[{"role": "user", "content": message["content"]}]
         )
         generated_message = response.choices[0].message.content
 
         channel = stream_client.channel("messaging", message["chat_id"])
-        channel.create(data={"members": [message["user_id"]]})
-        channel.send_message({"text": generated_message}, user_id=message["user_id"])
+        await channel.create(data={"members": [message["user_id"]]})
+        await channel.send_message(
+            {"text": generated_message}, user_id=message["user_id"]
+        )
 
         logger.info(f"Successfully processed message for chat {message['chat_id']}")
     except Exception as e:
         logger.error(f"Error processing message: {str(e)}")
-        # Could implement retry logic here
         raise
 
 
-def callback(ch, method, properties, body):
-    """Callback function for processing queue messages."""
+async def callback(ch, method, properties, body):
+    """Process messages from RabbitMQ."""
     try:
-        message = json.loads(body)
-        process_message(message)
-        ch.basic_ack(delivery_tag=method.delivery_tag)
+        message = json.loads(body.decode())
+        await process_message(message)
+        await ch.basic_ack(delivery_tag=method.delivery_tag)
     except Exception as e:
         logger.error(f"Error in callback: {str(e)}")
-        # Reject the message and requeue it
-        ch.basic_nack(delivery_tag=method.delivery_tag, requeue=True)
+        await ch.basic_nack(delivery_tag=method.delivery_tag, requeue=True)
 
 
-def main():
+async def main():
     """Main function to run the worker."""
     rabbitmq_host = os.getenv("RABBITMQ_HOST", "localhost")
     queue_name = os.getenv("QUEUE_NAME", "chat_queue")
