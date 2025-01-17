@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from stream_chat import StreamChat
 
 from .db import get_db
+from .services import ChatService
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -49,6 +50,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+chat_service = ChatService(client, stream_client)
 
 
 @app.get("/")
@@ -87,35 +90,27 @@ class UserInput(BaseModel):
     chat_id: str = Field(..., min_length=1)
 
 
+# Create crud container
+class CrudOperations:
+    def __init__(self):
+        self.log = log_crud
+        self.message = message_crud
+
+
+# Dependency function
+def get_crud():
+    return CrudOperations()
+
+
 @app.post("/generate-response")
 async def generate_response(data: UserInput):
-    logger.info(f"Generating response for user {data.user_id} in chat {data.chat_id}")
-
     try:
-        response = client.chat.completions.create(
-            model="gpt-4", messages=[{"role": "user", "content": data.message}]
+        response = await chat_service.generate_response(
+            data.user_id, data.message, data.chat_id
         )
-        generated_message = response.choices[0].message.content
-
-        try:
-            channel = stream_client.channel("messaging", data.chat_id)
-            channel.create(data={"members": [data.user_id]})
-            channel.send_message({"text": generated_message}, user_id=data.user_id)
-        except Exception as stream_error:
-            logger.error(f"Stream API error: {str(stream_error)}")
-            raise HTTPException(
-                status_code=400, detail=f"Stream API error: {str(stream_error)}"
-            ) from stream_error
-
-        return {"response": generated_message}
-
-    except HTTPException as he:
-        raise he
+        return {"response": response.content}
     except Exception as e:
-        logger.error(f"Error generating response: {str(e)}")
-        raise HTTPException(
-            status_code=500, detail=f"Internal server error: {str(e)}"
-        ) from e
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 class MessageRequest(BaseModel):

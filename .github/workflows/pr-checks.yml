@@ -17,6 +17,7 @@ jobs:
       STREAM_SECRET: "test-stream-secret"
       RABBITMQ_HOST: "localhost"
       QUEUE_NAME: "test_queue"
+      PYTHONPATH: ${{ github.workspace }}/src
 
     steps:
     - uses: actions/checkout@v4
@@ -34,7 +35,7 @@ jobs:
       run: |
         cd src/db
         poetry install
-        cd ../api
+        cd ../${{ matrix.service }}
         poetry config virtualenvs.create false
         poetry install
         poetry run pytest --cov=core tests/

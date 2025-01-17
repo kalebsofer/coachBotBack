@@ -15,7 +15,8 @@ openai = "^1.59.4"
 stream-chat = "^4.20.0"
 
 [tool.poetry.group.test.dependencies]
-pytest = "^8.3.4"
+pytest = "^8.0.2"
+pytest-asyncio = "^0.23.5"
 pytest-cov = "^6.0.0"
 black = "^24.10.0"
 flake8 = "^7.0.0"
@@ -25,8 +26,12 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.pytest.ini_options]
+asyncio_mode = "auto"
 pythonpath = ["."]
 testpaths = ["tests"]
+
+[tool.pytest-asyncio]
+scope = "function"
 
 [tool.black]
 line-length = 88
