@@ -10,6 +10,10 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    logging:
+      driver: loki
+      options:
+        loki-url: "http://loki:3100/loki/api/v1/push"
 
   api:
     container_name: coach-bot-api
@@ -22,6 +26,10 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
+    logging:
+      driver: loki
+      options:
+        loki-url: "http://loki:3100/loki/api/v1/push"
 
   worker:
     container_name: coach-bot-worker
@@ -34,6 +42,10 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
+    logging:
+      driver: loki
+      options:
+        loki-url: "http://loki:3100/loki/api/v1/push"
 
   postgres:
     container_name: coach-bot-postgres
@@ -52,6 +64,10 @@ services:
       retries: 5
     environment:
       - PYTHONPATH=/db
+    logging:
+      driver: loki
+      options:
+        loki-url: "http://loki:3100/loki/api/v1/push"
 
   pgadmin:
     container_name: coach-bot-pgadmin
@@ -62,10 +78,81 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    logging:
+      driver: loki
+      options:
+        loki-url: "http://loki:3100/loki/api/v1/push"
+
+  prometheus:
+    container_name: coach-bot-prometheus
+    build:
+      context: .
+      dockerfile: docker/monitoring/prometheus/Dockerfile
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./src/monitoring/prometheus:/etc/prometheus
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    depends_on:
+      - api
+      - worker
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  loki:
+    container_name: coach-bot-loki
+    build:
+      context: .
+      dockerfile: docker/monitoring/loki/Dockerfile
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./src/monitoring/loki:/etc/loki
+      - loki_data:/loki
+    command: -config.file=/etc/loki/loki-config.yml
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "http://localhost:3100/ready"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  grafana:
+    container_name: coach-bot-grafana
+    build:
+      context: .
+      dockerfile: docker/monitoring/grafana/Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./src/monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      prometheus:
+        condition: service_healthy
+      loki:
+        condition: service_healthy
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel,grafana-worldmap-panel
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 networks:
   default:
     name: coach-bot-network 
 
 volumes:
-  postgres_data: 
+  postgres_data:
+  prometheus_data:
+  loki_data:
+  grafana_data: 
