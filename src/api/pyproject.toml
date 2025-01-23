@@ -20,6 +20,7 @@ pydantic = {extras = ["email"], version = "^2.6.3"}
 gunicorn = "^21.2.0"
 coach-bot-db = { path = "../db" }
 httpx = "^0.24.1"
+alembic = "^1.13.1"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^8.0.2"

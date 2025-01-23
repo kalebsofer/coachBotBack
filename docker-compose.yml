@@ -63,11 +63,15 @@ services:
       timeout: 5s
       retries: 5
     environment:
-      - PYTHONPATH=/db
+      - PYTHONPATH=/app/src
+      - PYTHONUNBUFFERED=1
+    entrypoint: []
+    command: ["bash", "-c", "sleep infinity"]  # Keeps container running for debugging
     logging:
-      driver: loki
+      driver: "json-file"
       options:
-        loki-url: "http://loki:3100/loki/api/v1/push"
+        max-size: "10m"
+        max-file: "3"
 
   pgadmin:
     container_name: coach-bot-pgadmin
@@ -115,7 +119,9 @@ services:
     volumes:
       - ./src/monitoring/loki:/etc/loki
       - loki_data:/loki
+      - loki_wal:/wal
     command: -config.file=/etc/loki/loki-config.yml
+    user: "root"
     healthcheck:
       test: ["CMD", "wget", "--spider", "http://localhost:3100/ready"]
       interval: 30s
@@ -147,6 +153,22 @@ services:
       timeout: 10s
       retries: 3
 
+  frontend:
+    container_name: coach-bot-frontend
+    build:
+      context: .
+      dockerfile: docker/frontend/Dockerfile
+    ports:
+      - "8501:8501"
+    environment:
+      - API_URL=http://api:8000
+    depends_on:
+      - api
+    logging:
+      driver: loki
+      options:
+        loki-url: "http://loki:3100/loki/api/v1/push"
+
 networks:
   default:
     name: coach-bot-network 
@@ -155,4 +177,5 @@ volumes:
   postgres_data:
   prometheus_data:
   loki_data:
+  loki_wal:
   grafana_data: 

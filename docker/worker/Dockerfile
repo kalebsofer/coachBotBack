@@ -1,32 +1,24 @@
-FROM python:3.12-slim as builder
-
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    POETRY_NO_INTERACTION=1 \
-    POETRY_VIRTUALENVS_CREATE=false
+FROM python:3.12-slim
 
 WORKDIR /app
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-    curl \
-    build-essential && \
-    pip install poetry && \
+    gcc \
+    libpq-dev && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-COPY src/worker/pyproject.toml src/worker/poetry.lock ./
-RUN poetry install --no-root
+# Copy entire worker directory
+COPY src/worker/ /app/worker/
 
-COPY src/worker/ ./
+WORKDIR /app/worker
 
-ENV PATH="/usr/local/bin:/root/.local/bin:$PATH"
+# Install dependencies
+RUN pip install poetry && \
+    poetry config virtualenvs.create false && \
+    poetry install --no-root
 
-COPY <<EOF /entrypoint.sh
-#!/bin/bash
-python -m core.main
-EOF
+ENV PYTHONPATH=/app
 
-RUN chmod +x /entrypoint.sh
-
-ENTRYPOINT ["/entrypoint.sh"] 
+CMD ["python", "-m", "core.main"] 

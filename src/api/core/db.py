@@ -1,7 +1,8 @@
 from typing import AsyncGenerator
 
-from coach_bot_db.core.database import AsyncSessionLocal
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from db.core.database import AsyncSessionLocal
 
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
