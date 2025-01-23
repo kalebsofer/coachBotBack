@@ -22,4 +22,4 @@ RUN pip install poetry && \
 
 ENV PYTHONPATH=/app
 
-CMD ["uvicorn", "core.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["poetry", "run", "uvicorn", "core.main:app", "--host", "0.0.0.0", "--port", "8000"]

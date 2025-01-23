@@ -58,15 +58,15 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      timeout: 5s
+      test: ["CMD-SHELL", "pg_isready -U $POSTGRES_USER"]
+      interval: 30s
+      timeout: 10s
       retries: 5
     environment:
       - PYTHONPATH=/app/src
       - PYTHONUNBUFFERED=1
-    entrypoint: []
-    command: ["bash", "-c", "sleep infinity"]  # Keeps container running for debugging
+    entrypoint: ["docker-entrypoint.sh"]  # Use the default entrypoint
+    command: ["postgres"]  # Start the PostgreSQL server
     logging:
       driver: "json-file"
       options:

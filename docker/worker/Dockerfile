@@ -1,6 +1,6 @@
 FROM python:3.12-slim
 
-WORKDIR /app
+WORKDIR /app/worker
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
@@ -9,15 +9,17 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Copy entire worker directory
-COPY src/worker/ /app/worker/
-
-WORKDIR /app/worker
+# Copy dependency files first
+COPY src/worker/pyproject.toml src/worker/poetry.lock ./
 
 # Install dependencies
 RUN pip install poetry && \
     poetry config virtualenvs.create false && \
     poetry install --no-root
+
+# Then copy the source code
+COPY src/worker/core ./core
+COPY src/worker/tests ./tests
 
 ENV PYTHONPATH=/app
 
