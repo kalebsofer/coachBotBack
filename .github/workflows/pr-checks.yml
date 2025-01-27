@@ -17,6 +17,7 @@ jobs:
       STREAM_SECRET: "test-stream-secret"
       RABBITMQ_HOST: "localhost"
       QUEUE_NAME: "test_queue"
+      DATABASE_URL: "postgresql+asyncpg://user:password@localhost/test_db"
 
     steps:
     - uses: actions/checkout@v4
