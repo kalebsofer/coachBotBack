@@ -2,6 +2,10 @@ import sys
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Create mock database session
 mock_session = AsyncMock()
@@ -31,14 +35,12 @@ mock_core.database = mock_database
 mock_coach_bot_db = Mock()
 mock_coach_bot_db.core = mock_core
 
-# Mock the modules before any imports
 sys.modules["coach_bot_db"] = mock_coach_bot_db
 sys.modules["coach_bot_db.core"] = mock_core
 sys.modules["coach_bot_db.core.crud"] = mock_crud
 sys.modules["coach_bot_db.core.schemas"] = mock_schemas
 sys.modules["coach_bot_db.core.database"] = mock_database
 
-# Now we can safely import our app
 with (
     patch("openai.OpenAI") as _mock_openai_init,
     patch("stream_chat.StreamChat") as _mock_stream_init,
