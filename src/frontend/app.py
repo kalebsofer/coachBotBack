@@ -1,3 +1,4 @@
+import logging
 import os
 
 import requests
@@ -7,6 +8,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 API_URL = os.getenv("API_URL", "http://api:8000")
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 st.set_page_config(page_title="CoachBot Chat", page_icon="🤖", layout="centered")
 
@@ -25,8 +29,14 @@ if prompt := st.chat_input("What would you like to ask?"):
 
     st.session_state.messages.append({"role": "user", "content": prompt})
 
+    user_id = "test"  # Replace with actual user ID
+    chat_id = "test"  # Replace with actual chat ID
+
     try:
-        response = requests.post(f"{API_URL}/chat", json={"message": prompt})
+        response = requests.post(
+            f"{API_URL}/api/v1/chat/message",
+            json={"chat_id": chat_id, "user_id": user_id, "content": prompt},
+        )
         response.raise_for_status()
         assistant_response = response.json()["response"]
 
@@ -38,4 +48,5 @@ if prompt := st.chat_input("What would you like to ask?"):
         )
 
     except requests.exceptions.RequestException as e:
+        logger.error(f"Error communicating with the API: {str(e)}", exc_info=True)
         st.error(f"Error communicating with the API: {str(e)}")
