@@ -1,26 +1,25 @@
-FROM python:3.12-slim as builder
-
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    POETRY_NO_INTERACTION=1 \
-    POETRY_VIRTUALENVS_CREATE=false
+FROM python:3.12-slim
 
 WORKDIR /app
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-    curl \
-    build-essential && \
-    pip install poetry && \
+    gcc \
+    libpq-dev && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-COPY src/api/pyproject.toml src/api/poetry.lock ./
-RUN poetry install --no-root
+# Copy entire source directories
+COPY src/api/ /app/api/
+COPY src/db/ /app/db/
 
-COPY src/api/ ./
-COPY src/db/core ./db/core
+WORKDIR /app/api
 
-ENV PATH="/usr/local/bin:/root/.local/bin:$PATH"
+# Install dependencies
+RUN pip install poetry && \
+    poetry config virtualenvs.create false && \
+    poetry install --no-root
+
+ENV PYTHONPATH=/app
 
 CMD ["poetry", "run", "uvicorn", "core.main:app", "--host", "0.0.0.0", "--port", "8000"]

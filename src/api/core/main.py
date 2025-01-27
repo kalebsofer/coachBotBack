@@ -2,9 +2,6 @@ import logging
 import os
 import uuid
 
-from coach_bot_db.core.crud import log as log_crud
-from coach_bot_db.core.crud import message as message_crud
-from coach_bot_db.core.schemas import LogCreate, MessageCreate
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -12,6 +9,10 @@ from openai import OpenAI
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 from stream_chat import StreamChat
+
+from db.core.crud import log as log_crud
+from db.core.crud import message as message_crud
+from db.core.schemas import LogCreate, MessageCreate
 
 from .db import get_db
 from .services import ChatService
@@ -122,11 +123,10 @@ class MessageRequest(BaseModel):
 @app.post("/api/v1/chat/message")
 async def send_message(message: MessageRequest, db: AsyncSession = Depends(get_db)):
     try:
-        # Validate UUIDs
         chat_id = uuid.UUID(message.chat_id)
         user_id = uuid.UUID(message.user_id)
 
-        # 1. Save user message to database
+        # Use db session for database operations
         db_message = await message_crud.create(
             db,
             obj_in=MessageCreate(

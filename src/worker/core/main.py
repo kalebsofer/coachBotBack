@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import os
@@ -37,7 +38,7 @@ async def process_message(message: Dict[str, Any]) -> None:
 
         logger.info(f"Successfully processed message for chat {message['chat_id']}")
     except Exception as e:
-        logger.error(f"Error processing message: {str(e)}")
+        logger.error(f"Error processing message: {str(e)}", exc_info=True)
         raise
 
 
@@ -48,7 +49,7 @@ async def callback(ch, method, properties, body):
         await process_message(message)
         await ch.basic_ack(delivery_tag=method.delivery_tag)
     except Exception as e:
-        logger.error(f"Error in callback: {str(e)}")
+        logger.error(f"Error in callback: {str(e)}", exc_info=True)
         await ch.basic_nack(delivery_tag=method.delivery_tag, requeue=True)
 
 
@@ -74,9 +75,9 @@ async def main():
         channel.start_consuming()
 
     except Exception as e:
-        logger.error(f"Worker error: {str(e)}")
+        logger.error(f"Worker error: {str(e)}", exc_info=True)
         raise
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
