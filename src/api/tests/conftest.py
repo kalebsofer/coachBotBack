@@ -1,8 +1,12 @@
+import os
 import sys
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 from dotenv import load_dotenv
+
+# Add the src directory to the Python path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 
 # Load environment variables from .env file
 load_dotenv()
