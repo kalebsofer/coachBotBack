@@ -3,10 +3,10 @@ services:
     container_name: coach-bot-rabbitmq
     image: rabbitmq:3-management
     ports:
-      - "5672:5672"  # AMQP protocol
-      - "15672:15672"  # Management UI
+      - "5672:5672" # AMQP protocol
+      - "15672:15672" # Management UI
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      test: [ "CMD", "rabbitmq-diagnostics", "check_port_connectivity" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -37,8 +37,6 @@ services:
       context: .
       dockerfile: docker/worker/Dockerfile
     env_file: .env
-    environment:
-      - RABBITMQ_HOST=rabbitmq
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -58,15 +56,15 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $POSTGRES_USER"]
+      test: [ "CMD-SHELL", "pg_isready -U $POSTGRES_USER" ]
       interval: 30s
       timeout: 10s
       retries: 5
     environment:
       - PYTHONPATH=/app/src
       - PYTHONUNBUFFERED=1
-    entrypoint: ["docker-entrypoint.sh"]  # Use the default entrypoint
-    command: ["postgres"]  # Start the PostgreSQL server
+    entrypoint: [ "docker-entrypoint.sh" ]
+    command: [ "postgres" ]
     logging:
       driver: "json-file"
       options:
@@ -104,7 +102,7 @@ services:
       - api
       - worker
     healthcheck:
-      test: ["CMD", "wget", "--spider", "http://localhost:9090/-/healthy"]
+      test: [ "CMD", "wget", "--spider", "http://prometheus:9090/-/healthy" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -123,7 +121,7 @@ services:
     command: -config.file=/etc/loki/loki-config.yml
     user: "root"
     healthcheck:
-      test: ["CMD", "wget", "--spider", "http://localhost:3100/ready"]
+      test: [ "CMD", "wget", "--spider", "http://loki:3100/ready" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -143,12 +141,8 @@ services:
         condition: service_healthy
       loki:
         condition: service_healthy
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
-      - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_INSTALL_PLUGINS=grafana-piechart-panel,grafana-worldmap-panel
     healthcheck:
-      test: ["CMD", "wget", "--spider", "http://localhost:3000/api/health"]
+      test: [ "CMD", "wget", "--spider", "http://grafana:3000/api/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -171,11 +165,11 @@ services:
 
 networks:
   default:
-    name: coach-bot-network 
+    name: coach-bot-network
 
 volumes:
   postgres_data:
   prometheus_data:
   loki_data:
   loki_wal:
-  grafana_data: 
+  grafana_data:

@@ -55,7 +55,7 @@ async def callback(ch, method, properties, body):
 
 async def main():
     """Main function to run the worker."""
-    rabbitmq_host = os.getenv("RABBITMQ_HOST", "localhost")
+    rabbitmq_host = os.getenv("RABBITMQ_HOST", "95.216.214.173")
     queue_name = os.getenv("QUEUE_NAME", "chat_queue")
 
     try:
