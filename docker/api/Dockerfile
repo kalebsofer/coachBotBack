@@ -20,8 +20,6 @@ RUN pip install poetry && \
     poetry install --no-root
 
 ENV PYTHONPATH=/app
+ENV PYTHONUNBUFFERED=1
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-    CMD curl --fail http://localhost:8000/health || exit 1
-
-CMD ["poetry", "run", "uvicorn", "core.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["poetry", "run", "uvicorn", "core.main:app", "--host", "0.0.0.0", "--port", "8000", "--log-level", "debug"]

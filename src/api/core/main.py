@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 from stream_chat import StreamChat
 from prometheus_fastapi_instrumentator import Instrumentator
+from sqlalchemy import text
 
 from db.core.crud import log as log_crud
 from db.core.crud import message as message_crud
@@ -17,28 +18,38 @@ from db.core.schemas import LogCreate, MessageCreate
 
 from .db import get_db
 from .services import ChatService
+from .logging_config import configure_logging
 
-# Update logging configuration
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
+# Configure logging first thing
+logger = configure_logging()
+logger.info("Starting API application initialization")
 
-load_dotenv()
+# Rest of the imports...
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-stream_client = StreamChat(
-    api_key=os.getenv("STREAM_API_KEY"),
-    api_secret=os.getenv("STREAM_SECRET"),
-    location="dublin",
-)
+try:
+    load_dotenv()
+    logger.info("Environment variables loaded")
 
+    # Initialize clients
+    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    stream_client = StreamChat(
+        api_key=os.getenv("STREAM_API_KEY"),
+        api_secret=os.getenv("STREAM_SECRET"),
+        location="dublin",
+    )
+    logger.info("API clients initialized")
+except Exception as e:
+    logger.error(f"Error during initialization: {str(e)}")
+    raise
+
+# Create FastAPI app with logging
 app = FastAPI(
     title="Coach Bot API",
     description="AI-powered coaching bot API service",
     version="0.1.0",
 )
+
+logger.info("FastAPI application created")
 
 # For prometheus metrics
 Instrumentator().instrument(app).expose(app)
@@ -55,32 +66,33 @@ app.add_middleware(
 
 chat_service = ChatService(client, stream_client)
 
-# Add startup logging
 @app.on_event("startup")
 async def startup_event():
-    logger.info("Starting up API service")
-    try:
-        # Test database connection
-        async with get_db() as db:
-            await db.execute("SELECT 1")
-        logger.info("Database connection successful")
-    except Exception as e:
-        logger.error(f"Database connection failed: {str(e)}")
-        raise
+    logger.info("=== API Service Startup ===")
+    
+    # Log environment check
+    logger.info("Checking environment variables...")
+    for env_var in ["DATABASE_URL", "OPENAI_API_KEY", "STREAM_API_KEY"]:
+        if env_var in os.environ:
+            logger.info(f"✓ {env_var} is configured")
+        else:
+            logger.error(f"✗ {env_var} is missing")
 
+    # Database check
+    logger.info("Testing database connection...")
     try:
-        # Test OpenAI connection
-        client.models.list()
-        logger.info("OpenAI connection successful")
+        db = await anext(get_db())
+        try:
+            await db.execute(text("SELECT 1"))
+            logger.info("✓ Database connection successful")
+        finally:
+            await db.close()
     except Exception as e:
-        logger.error(f"OpenAI connection failed: {str(e)}")
+        logger.error(f"✗ Database connection failed: {str(e)}")
+        logger.error("API might not function correctly without database")
+        raise  # Fail startup if database isn't available
 
-    try:
-        # Test Stream Chat connection
-        stream_client.get_app_settings()
-        logger.info("Stream Chat connection successful")
-    except Exception as e:
-        logger.error(f"Stream Chat connection failed: {str(e)}")
+    logger.info("=== Startup Complete ===")
 
 
 @app.get("/")
@@ -94,23 +106,17 @@ async def root():
 
 @app.get("/health")
 async def health_check():
-    services_status = {"api": "healthy", "openai": "unknown", "stream": "unknown"}
-
+    # Quick database check
     try:
-        client.models.list()
-        services_status["openai"] = "healthy"
+        db = await anext(get_db())
+        try:
+            await db.execute(text("SELECT 1"))
+            return {"status": "healthy"}
+        finally:
+            await db.close()
     except Exception as e:
-        logger.error(f"OpenAI health check failed: {str(e)}")
-        services_status["openai"] = "unhealthy"
-
-    try:
-        stream_client.get_app_settings()
-        services_status["stream"] = "healthy"
-    except Exception as e:
-        logger.error(f"Stream health check failed: {str(e)}")
-        services_status["stream"] = "unhealthy"
-
-    return {"status": services_status}
+        logger.error(f"Health check failed: {str(e)}")
+        raise HTTPException(status_code=503, detail="Service unavailable")
 
 
 class UserInput(BaseModel):

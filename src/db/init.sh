@@ -7,24 +7,20 @@ until pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"; do
     sleep 2
 done
 
-cd /app
+cd /app/db
 
-# Run commands as postgres user
 echo "Setting up environment..."
-export PATH="/usr/local/bin:/usr/bin:$PATH"
 export PYTHONPATH=/app/src
-export HOME=/home/postgres
 
-echo "Current user: $(whoami)"
-echo "Postgres user exists: $(id postgres || echo 'no')"
+echo "Current directory: $(pwd)"
 echo "Python version: $(python3 --version)"
-echo "Poetry version: $(poetry --version)"
+echo "Files in current directory:"
+ls -la
 
-# Run migrations and init as postgres user
 echo "Running migrations..."
-su postgres -c "poetry run alembic upgrade head"
+alembic upgrade head
 
 echo "Initializing database..."
-su postgres -c "poetry run python -m core.init_db"
+python3 -m core.init_db
 
 echo "Database initialization completed" 
