@@ -5,15 +5,18 @@ services:
     ports:
       - "5672:5672" # AMQP protocol
       - "15672:15672" # Management UI
+    volumes:
+      - rabbitmq_logs:/var/log/rabbitmq
     healthcheck:
       test: [ "CMD", "rabbitmq-diagnostics", "check_port_connectivity" ]
       interval: 30s
       timeout: 10s
       retries: 3
     logging:
-      driver: loki
+      driver: json-file
       options:
-        loki-url: "http://loki:3100/loki/api/v1/push"
+        max-size: "10m"
+        max-file: "3"
 
   api:
     container_name: coach-bot-api
@@ -24,8 +27,16 @@ services:
       - "8000:8000"
     env_file: .env
     depends_on:
+      postgres:
+        condition: service_healthy
       rabbitmq:
         condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     logging:
       driver: loki
       options:
@@ -93,19 +104,29 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - ./src/monitoring/prometheus:/etc/prometheus
       - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
     depends_on:
       - api
       - worker
     healthcheck:
-      test: [ "CMD", "wget", "--spider", "http://prometheus:9090/-/healthy" ]
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:9090/-/healthy || exit 1" ]
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 20s
+    networks:
+      - monitoring
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+        compress: "true"
 
   loki:
     container_name: coach-bot-loki
@@ -166,6 +187,8 @@ services:
 networks:
   default:
     name: coach-bot-network
+  monitoring:
+    internal: true
 
 volumes:
   postgres_data:
@@ -173,3 +196,4 @@ volumes:
   loki_data:
   loki_wal:
   grafana_data:
+  rabbitmq_logs:

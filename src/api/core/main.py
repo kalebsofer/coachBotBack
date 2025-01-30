@@ -9,6 +9,7 @@ from openai import OpenAI
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 from stream_chat import StreamChat
+from prometheus_fastapi_instrumentator import Instrumentator
 
 from db.core.crud import log as log_crud
 from db.core.crud import message as message_crud
@@ -17,7 +18,11 @@ from db.core.schemas import LogCreate, MessageCreate
 from .db import get_db
 from .services import ChatService
 
-logging.basicConfig(level=logging.INFO)
+# Update logging configuration
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 logger = logging.getLogger(__name__)
 
 load_dotenv()
@@ -35,6 +40,9 @@ app = FastAPI(
     version="0.1.0",
 )
 
+# For prometheus metrics
+Instrumentator().instrument(app).expose(app)
+
 allowed_origins = os.getenv("ALLOWED_ORIGINS", "").split(",")
 
 app.add_middleware(
@@ -46,6 +54,33 @@ app.add_middleware(
 )
 
 chat_service = ChatService(client, stream_client)
+
+# Add startup logging
+@app.on_event("startup")
+async def startup_event():
+    logger.info("Starting up API service")
+    try:
+        # Test database connection
+        async with get_db() as db:
+            await db.execute("SELECT 1")
+        logger.info("Database connection successful")
+    except Exception as e:
+        logger.error(f"Database connection failed: {str(e)}")
+        raise
+
+    try:
+        # Test OpenAI connection
+        client.models.list()
+        logger.info("OpenAI connection successful")
+    except Exception as e:
+        logger.error(f"OpenAI connection failed: {str(e)}")
+
+    try:
+        # Test Stream Chat connection
+        stream_client.get_app_settings()
+        logger.info("Stream Chat connection successful")
+    except Exception as e:
+        logger.error(f"Stream Chat connection failed: {str(e)}")
 
 
 @app.get("/")
@@ -116,41 +151,60 @@ class MessageRequest(BaseModel):
 @app.post("/api/v1/chat/message")
 async def send_message(message: MessageRequest, db: AsyncSession = Depends(get_db)):
     try:
-        chat_id = uuid.UUID(message.chat_id)
-        user_id = uuid.UUID(message.user_id)
-
-        # Use db session for database operations
-        db_message = await message_crud.create(
-            db,
-            obj_in=MessageCreate(
-                chat_id=chat_id, sender_id=user_id, content=message.content
-            ),
-        )
-
-        # 2. Create log entry
-        await log_crud.create(
-            db,
-            obj_in=LogCreate(
-                user_id=user_id,
-                chat_id=chat_id,
-                action="send_message",
-                details=f"Message sent: {message.content[:50]}...",
-            ),
-        )
-
-        # 3. Send to Stream Chat
+        # Add debug logging
+        logger.info(f"Received message request: {message}")
+        
         try:
+            chat_id = uuid.UUID(message.chat_id)
+            user_id = uuid.UUID(message.user_id)
+        except ValueError as ve:
+            logger.error(f"Invalid UUID format: {str(ve)}")
+            raise HTTPException(status_code=400, detail="Invalid UUID format") from ve
+
+        try:
+            # Save message to database
+            db_message = await message_crud.create(
+                db,
+                obj_in=MessageCreate(
+                    chat_id=chat_id, 
+                    sender_id=user_id, 
+                    content=message.content
+                ),
+            )
+            logger.info(f"Message saved to database with ID: {db_message.id}")
+        except Exception as db_error:
+            logger.error(f"Database error: {str(db_error)}")
+            raise HTTPException(status_code=500, detail="Database error") from db_error
+
+        try:
+            # Create log entry
+            await log_crud.create(
+                db,
+                obj_in=LogCreate(
+                    user_id=user_id,
+                    chat_id=chat_id,
+                    action="send_message",
+                    details=f"Message sent: {message.content[:50]}...",
+                ),
+            )
+        except Exception as log_error:
+            logger.error(f"Log creation error: {str(log_error)}")
+            # Don't fail if logging fails
+
+        try:
+            # Stream Chat integration
             channel = stream_client.channel("messaging", str(chat_id))
             channel.create(data={"members": [str(user_id)]})
             channel.send_message({"text": message.content}, user_id=str(user_id))
         except Exception as stream_error:
             logger.error(f"Stream API error: {str(stream_error)}")
-            # Don't fail the whole request if Stream fails
+            # Don't fail if Stream fails
 
-        # 4. Generate AI response if needed
         try:
+            # Generate AI response
             response = client.chat.completions.create(
-                model="gpt-4", messages=[{"role": "user", "content": message.content}]
+                model="gpt-4",
+                messages=[{"role": "user", "content": message.content}]
             )
             ai_response = response.choices[0].message.content
 
@@ -166,23 +220,31 @@ async def send_message(message: MessageRequest, db: AsyncSession = Depends(get_d
 
             # Send AI response to Stream Chat
             channel.send_message(
-                {"text": ai_response}, user_id="ai_assistant"  # or your AI user ID
+                {"text": ai_response}, 
+                user_id="ai_assistant"
             )
+
+            return {
+                "status": "success",
+                "message_id": str(db_message.id),
+                "chat_id": str(chat_id),
+                "user_id": str(user_id),
+                "content": ai_response,  # Return AI response instead of user message
+            }
 
         except Exception as ai_error:
             logger.error(f"AI response error: {str(ai_error)}")
-            # Don't fail if AI generation fails
+            # Return original message if AI fails
+            return {
+                "status": "partial_success",
+                "message_id": str(db_message.id),
+                "chat_id": str(chat_id),
+                "user_id": str(user_id),
+                "content": message.content,
+            }
 
-        return {
-            "status": "success",
-            "message_id": str(db_message.id),
-            "chat_id": str(chat_id),
-            "user_id": str(user_id),
-            "content": message.content,
-        }
-
-    except ValueError as ve:
-        raise HTTPException(status_code=400, detail="Invalid UUID format") from ve
+    except HTTPException:
+        raise
     except Exception as e:
-        logger.error(f"Message handling error: {str(e)}")
+        logger.error(f"Unexpected error in send_message: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e)) from e

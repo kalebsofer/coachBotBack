@@ -1,5 +1,6 @@
 import logging
 import os
+import uuid
 
 import requests
 import streamlit as st
@@ -18,6 +19,9 @@ st.title("🤖 CoachBot Chat")
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
+    # change these to actual user and chat ids
+    st.session_state.user_id = str(uuid.uuid4())
+    st.session_state.chat_id = str(uuid.uuid4())
 
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
@@ -29,16 +33,18 @@ if prompt := st.chat_input("What would you like to ask?"):
 
     st.session_state.messages.append({"role": "user", "content": prompt})
 
-    user_id = "test"  # Replace with actual user ID
-    chat_id = "test"  # Replace with actual chat ID
-
     try:
         response = requests.post(
             f"{API_URL}/api/v1/chat/message",
-            json={"chat_id": chat_id, "user_id": user_id, "content": prompt},
+            json={
+                "chat_id": st.session_state.chat_id,
+                "user_id": st.session_state.user_id,
+                "content": prompt
+            },
         )
         response.raise_for_status()
-        assistant_response = response.json()["response"]
+        response_data = response.json()
+        assistant_response = response_data.get("content", "No response received")
 
         with st.chat_message("assistant"):
             st.markdown(assistant_response)

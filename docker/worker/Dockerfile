@@ -23,4 +23,4 @@ COPY src/worker/tests ./tests
 
 ENV PYTHONPATH=/app
 
-CMD ["python", "-m", "core.main"] 
+CMD ["poetry", "run", "python", "-m", "core.main"] 
