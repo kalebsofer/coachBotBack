@@ -80,17 +80,15 @@ async def startup_event():
 
     # Database check
     logger.info("Testing database connection...")
-    try:
-        db = await anext(get_db())
+    async for db in get_db():  # Use async for instead of anext
         try:
             await db.execute(text("SELECT 1"))
             logger.info("✓ Database connection successful")
-        finally:
-            await db.close()
-    except Exception as e:
-        logger.error(f"✗ Database connection failed: {str(e)}")
-        logger.error("API might not function correctly without database")
-        raise  # Fail startup if database isn't available
+            break  # Exit after successful check
+        except Exception as e:
+            logger.error(f"✗ Database connection failed: {str(e)}")
+            logger.error("API might not function correctly without database")
+            raise  # Fail startup if database isn't available
 
     logger.info("=== Startup Complete ===")
 
@@ -107,16 +105,9 @@ async def root():
 @app.get("/health")
 async def health_check():
     # Quick database check
-    try:
-        db = await anext(get_db())
-        try:
-            await db.execute(text("SELECT 1"))
-            return {"status": "healthy"}
-        finally:
-            await db.close()
-    except Exception as e:
-        logger.error(f"Health check failed: {str(e)}")
-        raise HTTPException(status_code=503, detail="Service unavailable")
+    async for db in get_db():  # Use async for
+        await db.execute(text("SELECT 1"))
+        return {"status": "healthy"}
 
 
 class UserInput(BaseModel):
