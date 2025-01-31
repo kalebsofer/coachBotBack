@@ -22,22 +22,15 @@ FROM postgres:16
 ENV POSTGRES_USER=postgres \
     POSTGRES_PASSWORD=postgres \
     POSTGRES_DB=coach_bot \
-    PYTHONPATH=/app/src \
-    PYTHONUNBUFFERED=1
+    PYTHONPATH=/app/src
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    python3 \
-    python3-pip \
-    python3-venv && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
-COPY --from=builder /usr/local/lib/python3.12/site-packages/ /usr/local/lib/python3.12/site-packages/
-COPY --from=builder /usr/local/bin/alembic /usr/local/bin/
+COPY --from=builder /usr/local/bin/python3 /usr/local/bin/
+COPY --from=builder /usr/local/lib/python3.12 /usr/local/lib/python3.12
+COPY --from=builder /usr/local/lib/libpython3.12.so* /usr/local/lib/
 
 COPY --from=builder /app/db/migrations /app/db/migrations
 COPY --from=builder /app/db/core /app/db/core
+COPY src/db/alembic.ini /app/db/alembic.ini
 COPY src/db/init.sh /docker-entrypoint-initdb.d/
 RUN chmod +x /docker-entrypoint-initdb.d/init.sh
 

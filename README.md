@@ -121,6 +121,9 @@ docker compose up -d --force-recreate worker prometheus
 
 # Rebuild monitoring stack
 docker compose up -d --force-recreate prometheus grafana
+
+# Rebuild postgres and its dependents
+docker compose up -d --force-recreate postgres api pgadmin
 ```
 
 ### Running Tests

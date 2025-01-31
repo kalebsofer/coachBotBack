@@ -39,7 +39,7 @@ CRUD (Create, Read, Update, Delete) operations provide:
 - Rollback capability
 - Migration history tracking
 
-## Technology Stack
+## Stack
 
 ### PostgreSQL
 - Robust relational database
@@ -47,7 +47,7 @@ CRUD (Create, Read, Update, Delete) operations provide:
 - JSONB for flexible storage
 
 ### SQLAlchemy
-- Python's most powerful ORM
+- Powerful ORM
 - Type hints and async support
 - Complex query capabilities
 - Connection pooling
@@ -55,7 +55,7 @@ CRUD (Create, Read, Update, Delete) operations provide:
 
 ### Alembic
 - Database migration tool
-- Works seamlessly with SQLAlchemy
+- Works with SQLAlchemy
 - Supports both auto and manual migrations
 - Dependency resolution
 - Branch management

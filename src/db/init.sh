@@ -1,9 +1,21 @@
 #!/bin/bash
 set -ex  # Add -x for verbose logging
 
-# Wait for database to be ready
+# Wait for postgres to be ready
+until pg_isready -U "$POSTGRES_USER"; do
+    echo "Waiting for postgres to be ready..."
+    sleep 2
+done
+
+echo "Creating database if it doesn't exist..."
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<-EOSQL
+    SELECT 'CREATE DATABASE $POSTGRES_DB'
+    WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '$POSTGRES_DB')\gexec
+EOSQL
+
+# Wait for the new database to be ready
 until pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"; do
-    echo "Waiting for database to be ready..."
+    echo "Waiting for $POSTGRES_DB database to be ready..."
     sleep 2
 done
 
@@ -18,7 +30,7 @@ echo "Files in current directory:"
 ls -la
 
 echo "Running migrations..."
-alembic upgrade head
+python3 -m alembic -c /app/db/alembic.ini upgrade head
 
 echo "Initializing database..."
 python3 -m core.init_db

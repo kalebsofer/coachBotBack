@@ -1,6 +1,7 @@
 import logging
 import os
 import uuid
+import asyncio
 
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException
@@ -78,17 +79,27 @@ async def startup_event():
         else:
             logger.error(f"✗ {env_var} is missing")
 
-    # Database check
+    # Database check with retries
     logger.info("Testing database connection...")
-    async for db in get_db():  # Use async for instead of anext
+    max_retries = 5
+    retry_delay = 5  # seconds
+
+    for attempt in range(max_retries):
         try:
-            await db.execute(text("SELECT 1"))
-            logger.info("✓ Database connection successful")
-            break  # Exit after successful check
+            async for db in get_db():
+                await db.execute(text("SELECT 1"))
+                logger.info("✓ Database connection successful")
+                break
+            break  # Connection successful, exit retry loop
         except Exception as e:
-            logger.error(f"✗ Database connection failed: {str(e)}")
-            logger.error("API might not function correctly without database")
-            raise  # Fail startup if database isn't available
+            if attempt < max_retries - 1:
+                logger.warning(f"Database connection attempt {attempt + 1} failed: {str(e)}")
+                logger.info(f"Retrying in {retry_delay} seconds...")
+                await asyncio.sleep(retry_delay)
+            else:
+                logger.error(f"✗ Database connection failed after {max_retries} attempts: {str(e)}")
+                logger.error("API might not function correctly without database")
+                raise  # Fail startup if all retries exhausted
 
     logger.info("=== Startup Complete ===")
 
