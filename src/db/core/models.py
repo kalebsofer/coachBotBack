@@ -53,26 +53,16 @@ class Message(Base):
     sender: Mapped[User] = relationship(back_populates="messages")
 
 
-class Log(Base, UUIDMixin):
+class Log(Base):
     """Log model for audit trail."""
-
     __tablename__ = "logs"
 
-    user_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("users.id", ondelete="CASCADE"),
-        nullable=False,
-    )
-    chat_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("chats.id", ondelete="CASCADE"),
-        nullable=False,
-    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID, primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    chat_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("chats.id", ondelete="CASCADE"))
     action: Mapped[str] = mapped_column(String(length=255), nullable=False)
     details: Mapped[str] = mapped_column(Text, nullable=True)
-    timestamp: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        server_default=func.now(),
-        nullable=False,
-    )
+    timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships
     user: Mapped[User] = relationship(back_populates="logs")
