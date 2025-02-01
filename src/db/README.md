@@ -1,100 +1,88 @@
 # Database Service
 
-The database service manages data persistence and access for the Coach Bot system using PostgreSQL, SQLAlchemy, and Alembic.
+The database service manages data persistence for the Coach Bot system using PostgreSQL and SQLAlchemy.
 
 ## Core Components
 
 ### Models (`core/models.py`)
-- SQLAlchemy ORM models defining database schema
+- SQLAlchemy ORM models defining three main tables:
+  - Users: Stores user information
+  - Chats: Manages chat sessions
+  - Messages: Stores chat messages
 - Uses UUID primary keys for distributed safety
-- Implements common mixins for timestamps and IDs
-- Handles relationships between entities (User, Chat, Message, Log)
+- Implements timestamps for tracking creation time
 
 ### Database Connection (`core/database.py`)
 - Manages async database connections using SQLAlchemy 2.0
-- Implements connection pooling for performance
-- Provides session management and dependency injection
 - Uses asyncpg for better async performance
-
-### CRUD Operations (`core/crud.py`)
-CRUD (Create, Read, Update, Delete) operations provide:
-- Clean interface for database interactions
-- Type-safe data access through generics
-- Consistent error handling
-- Business logic separation
-- Reusable base operations
-- Model-specific query methods
+- Provides session management and dependency injection
+- Configurable through environment variables
 
 ### Schemas (`core/schemas.py`)
 - Pydantic models for data validation
 - Separate schemas for creation and reading
 - Type conversion and validation
 - API request/response models
-- SQLAlchemy model serialization
 
 ### Migrations (`migrations/`)
 - Alembic for database schema version control
-- Automatic migration generation
+- Automatic table creation on startup
 - Safe database updates
 - Rollback capability
-- Migration history tracking
 
 ## Stack
 
 ### PostgreSQL
+- Version: 16
 - Robust relational database
 - Strong UUID support
-- JSONB for flexible storage
+- Timezone-aware timestamps
 
 ### SQLAlchemy
-- Powerful ORM
-- Type hints and async support
-- Complex query capabilities
+- Version: 2.0
+- Async support with asyncpg
+- Type hints and validation
 - Connection pooling
-- Transaction management
 
 ### Alembic
 - Database migration tool
 - Works with SQLAlchemy
-- Supports both auto and manual migrations
-- Dependency resolution
-- Branch management
+- Automatic migration application
+- Version control for schema changes
 
-### Pydantic
-- Data validation using Python type annotations
-- Automatic serialization/deserialization
-- Integration with FastAPI
-- Custom validators
-- Schema documentation
+## Configuration
+
+### Environment Variables
+Required variables in root `.env`:
+```env
+DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/coach_bot
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_DB=coach_bot
+```
+
+### PostgreSQL Configuration
+Basic configuration in `config/`:
+- `postgresql.conf`: Database settings
+- `pg_hba.conf`: Access control
 
 ## Development
 
 ### Prerequisites
 - Python 3.12+
-- Poetry for dependency management
 - PostgreSQL 16+
 - Docker and Docker Compose
 
-### Environment Setup
-```bash
-# Install dependencies
-poetry install
-
-# Set up environment variables
-cp .env.example .env
-# Edit .env with your credentials
-```
-
 ### Database Operations
 ```bash
-# Create migration
-poetry run alembic revision --autogenerate -m "description"
-
 # Apply migrations
-poetry run alembic upgrade head
+alembic upgrade head
 
 # Rollback migration
-poetry run alembic downgrade -1
+alembic downgrade -1
+
+# Create new migration
+alembic revision --autogenerate -m "description"
 ```
 
 ### Docker
@@ -105,11 +93,3 @@ docker-compose up -d postgres
 # View logs
 docker-compose logs -f postgres
 ```
-
-## Configuration
-
-### Environment Variables
-- `DATABASE_URL`: PostgreSQL connection string
-- `POSTGRES_USER`: Database user
-- `POSTGRES_PASSWORD`: Database password
-- `POSTGRES_DB`: Database name

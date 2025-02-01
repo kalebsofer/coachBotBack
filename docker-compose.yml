@@ -65,23 +65,13 @@ services:
     ports:
       - "5432:5432"
     env_file: .env
-    environment:
-      - PYTHONPATH=/app/src
-      - PYTHONUNBUFFERED=1
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB" ]
-      interval: 30s
-      timeout: 10s
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
       retries: 5
-    entrypoint: [ "docker-entrypoint.sh" ]
-    command: [ "postgres" ]
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
 
   pgadmin:
     container_name: coach-bot-pgadmin
