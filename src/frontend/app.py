@@ -8,10 +8,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# Get API URL from environment, fallback to api:8000 for docker
 API_URL = os.getenv("API_URL", "http://api:8000")
+logger = logging.getLogger(__name__)
+logger.info(f"Using API URL: {API_URL}")
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 st.set_page_config(page_title="CoachBot Chat", page_icon="🤖", layout="centered")
 
@@ -34,6 +36,7 @@ if prompt := st.chat_input("What would you like to ask?"):
     st.session_state.messages.append({"role": "user", "content": prompt})
 
     try:
+        logger.info(f"Sending request to {API_URL}/api/v1/chat/message")
         response = requests.post(
             f"{API_URL}/api/v1/chat/message",
             json={

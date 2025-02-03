@@ -1,8 +1,8 @@
 import os
 from typing import AsyncGenerator
-
 from dotenv import load_dotenv
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from contextlib import asynccontextmanager
 
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "../../../.env"))
 
@@ -11,29 +11,43 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
     raise ValueError("DATABASE_URL is not set. Please check your .env file.")
 
-# If URL doesn't specify a driver, use asyncpg by default
-if not any(driver in DATABASE_URL for driver in ["postgresql+asyncpg", "postgresql+psycopg2"]):
-    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://")
+def get_sync_url(url: str) -> str:
+    """Convert async URL to sync URL for migrations"""
+    url = url.replace("localhost", "postgres")  # Ensure correct host
+    if 'postgresql+asyncpg://' in url:
+        return url.replace('postgresql+asyncpg://', 'postgresql+psycopg2://')
+    if 'postgresql://' in url:
+        return url.replace('postgresql://', 'postgresql+psycopg2://')
+    return url
 
-# Only create async engine if using asyncpg
-if "postgresql+asyncpg" in DATABASE_URL:
-    engine = create_async_engine(
-        DATABASE_URL,
-        echo=True,
-        pool_pre_ping=True,
-        pool_recycle=300,
-    )
+def get_async_url(url: str) -> str:
+    """Convert URL to async URL for application"""
+    url = url.replace("localhost", "postgres")  # Ensure correct host
+    if 'postgresql+psycopg2://' in url:
+        return url.replace('postgresql+psycopg2://', 'postgresql+asyncpg://')
+    if 'postgresql://' in url:
+        return url.replace('postgresql://', 'postgresql+asyncpg://')
+    return url
 
-    AsyncSessionLocal = async_sessionmaker(
-        engine,
-        class_=AsyncSession,
-        expire_on_commit=False,
-    )
+# For application (async)
+engine = create_async_engine(
+    get_async_url(DATABASE_URL),
+    echo=True,
+    pool_pre_ping=True,
+    pool_recycle=300,
+)
 
+AsyncSessionLocal = async_sessionmaker(
+    engine,
+    class_=AsyncSession,
+    expire_on_commit=False,
+)
+
+@asynccontextmanager
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
     """Dependency for getting async database sessions."""
-    async with AsyncSessionLocal() as session:
-        try:
-            yield session
-        finally:
-            await session.close()
+    session = AsyncSessionLocal()
+    try:
+        yield session
+    finally:
+        await session.close()

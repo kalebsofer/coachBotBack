@@ -23,6 +23,7 @@ class User(Base):
     # Relationships
     chats: Mapped[list["Chat"]] = relationship(back_populates="user")
     messages: Mapped[list["Message"]] = relationship(back_populates="sender")
+    logs: Mapped[list["Log"]] = relationship(back_populates="user")
 
 
 class Chat(Base):
@@ -36,6 +37,7 @@ class Chat(Base):
     # Relationships
     user: Mapped[User] = relationship(back_populates="chats")
     messages: Mapped[list["Message"]] = relationship(back_populates="chat")
+    logs: Mapped[list["Log"]] = relationship(back_populates="chat")
 
 
 class Message(Base):

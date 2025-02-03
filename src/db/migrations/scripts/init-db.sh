@@ -1,15 +1,49 @@
 #!/bin/bash
 set -e
 
+echo "Waiting for PostgreSQL to start..."
 until pg_isready -U "$POSTGRES_USER"; do
-    echo "Waiting for postgres..."
-    sleep 2
+    echo "PostgreSQL is unavailable - sleeping"
+    sleep 5
 done
 
-echo "PostgreSQL started"
+# Wait a bit more to ensure PostgreSQL is fully ready to accept connections
+sleep 5
 
-if [ "$POSTGRES_DB" ]; then
-    echo "Running migrations..."
-    cd /app/db
-    alembic upgrade head
-fi 
+echo "PostgreSQL started, creating database..."
+
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<-EOSQL
+    DO
+    $$
+    BEGIN
+        IF NOT EXISTS (SELECT FROM pg_database WHERE datname = '${POSTGRES_DB}') THEN
+            CREATE DATABASE ${POSTGRES_DB};
+        END IF;
+    END
+    $$;
+EOSQL
+
+echo "Database created or already exists"
+
+cd /app/db
+# Use local socket connection since we're inside the postgres container
+export DATABASE_URL="postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@/${POSTGRES_DB}"
+echo "Using alembic.ini at: $(pwd)/alembic.ini"
+
+echo "Running migrations from $(pwd)"
+echo "Available migration files:"
+ls -la migrations/versions/
+echo "Database URL: $DATABASE_URL"
+echo "Current directory contents:"
+ls -la
+echo "Migrations directory contents:"
+ls -la migrations/
+
+set -x  # Enable command tracing
+alembic -c alembic.ini upgrade head
+set +x
+
+echo "Migrations completed successfully"
+
+psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c 'SELECT 1' || exit 1
+echo "PostgreSQL is fully initialized and ready" 

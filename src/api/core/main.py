@@ -20,6 +20,7 @@ from db.core.schemas import LogCreate, MessageCreate
 from .db import get_db
 from .services import ChatService
 from .logging_config import configure_logging
+from db.core.database import get_session
 
 # Configure logging first thing
 logger = configure_logging()
@@ -55,11 +56,10 @@ logger.info("FastAPI application created")
 # For prometheus metrics
 Instrumentator().instrument(app).expose(app)
 
-allowed_origins = os.getenv("ALLOWED_ORIGINS", "").split(",")
-
+# Allow all origins in development, configure properly in production
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,
+    allow_origins=["*"],  # Update this for production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -70,36 +70,26 @@ chat_service = ChatService(client, stream_client)
 @app.on_event("startup")
 async def startup_event():
     logger.info("=== API Service Startup ===")
-    
-    # Log environment check
     logger.info("Checking environment variables...")
-    for env_var in ["DATABASE_URL", "OPENAI_API_KEY", "STREAM_API_KEY"]:
-        if env_var in os.environ:
-            logger.info(f"✓ {env_var} is configured")
+    
+    # Verify required environment variables
+    required_vars = ["DATABASE_URL", "OPENAI_API_KEY", "STREAM_API_KEY"]
+    for var in required_vars:
+        if os.getenv(var):
+            logger.info(f"✓ {var} is configured")
         else:
-            logger.error(f"✗ {env_var} is missing")
-
-    # Database check with retries
+            logger.error(f"✗ {var} is not configured")
+            raise ValueError(f"Missing required environment variable: {var}")
+    
     logger.info("Testing database connection...")
-    max_retries = 5
-    retry_delay = 5  # seconds
-
-    for attempt in range(max_retries):
-        try:
-            async for db in get_db():
-                await db.execute(text("SELECT 1"))
-                logger.info("✓ Database connection successful")
-                break
-            break  # Connection successful, exit retry loop
-        except Exception as e:
-            if attempt < max_retries - 1:
-                logger.warning(f"Database connection attempt {attempt + 1} failed: {str(e)}")
-                logger.info(f"Retrying in {retry_delay} seconds...")
-                await asyncio.sleep(retry_delay)
-            else:
-                logger.error(f"✗ Database connection failed after {max_retries} attempts: {str(e)}")
-                logger.error("API might not function correctly without database")
-                raise  # Fail startup if all retries exhausted
+    try:
+        async with get_session() as session:
+            # Use text() for raw SQL
+            await session.execute(text("SELECT 1"))
+            logger.info("✓ Database connection successful")
+    except Exception as e:
+        logger.error(f"✗ Database connection failed: {e}")
+        raise
 
     logger.info("=== Startup Complete ===")
 

@@ -9,14 +9,17 @@ services:
       - rabbitmq_logs:/var/log/rabbitmq
     healthcheck:
       test: [ "CMD", "rabbitmq-diagnostics", "check_port_connectivity" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     logging:
       driver: json-file
       options:
         max-size: "10m"
         max-file: "3"
+    networks:
+      - coach-bot-network
 
   api:
     container_name: coach-bot-api
@@ -33,15 +36,17 @@ services:
         condition: service_healthy
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
-      interval: 5s
-      timeout: 3s
-      retries: 2
-      start_period: 10s
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
     restart: "no"
     logging:
       driver: loki
       options:
         loki-url: "http://loki:3100/loki/api/v1/push"
+    networks:
+      - coach-bot-network
 
   worker:
     container_name: coach-bot-worker
@@ -50,12 +55,18 @@ services:
       dockerfile: docker/worker/Dockerfile
     env_file: .env
     depends_on:
+      postgres:
+        condition: service_healthy
       rabbitmq:
         condition: service_healthy
     logging:
       driver: loki
       options:
         loki-url: "http://loki:3100/loki/api/v1/push"
+    networks:
+      - coach-bot-network
+    environment:
+      - RABBITMQ_HOST=rabbitmq
 
   postgres:
     container_name: coach-bot-postgres
@@ -67,11 +78,17 @@ services:
     env_file: .env
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./src/db/config/postgresql.conf:/etc/postgresql/postgresql.conf
+      - ./src/db/config/pg_hba.conf:/etc/postgresql/pg_hba.conf
+    command: [ "postgres", "-c", "config_file=/etc/postgresql/postgresql.conf" ]
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
-      interval: 5s
+      test: [ "CMD", "pg_isready", "-U", "postgres" ]
+      interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 30s
+    networks:
+      - coach-bot-network
 
   pgadmin:
     container_name: coach-bot-pgadmin
@@ -177,12 +194,14 @@ services:
       driver: loki
       options:
         loki-url: "http://loki:3100/loki/api/v1/push"
+    networks:
+      - coach-bot-network
 
 networks:
-  default:
-    name: coach-bot-network
+  coach-bot-network:
+    driver: bridge
   monitoring:
-    internal: true
+    driver: bridge
 
 volumes:
   postgres_data:
