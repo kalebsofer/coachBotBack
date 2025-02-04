@@ -6,18 +6,23 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     gcc \
     libpq-dev \
-    curl && \
+    curl \
+    postgresql-client && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
 COPY src/api/ /app/api/
 COPY src/db/ /app/db/
+COPY src/common/ /app/common/
 
 WORKDIR /app/api
 
 RUN pip install poetry && \
     poetry config virtualenvs.create false && \
     poetry install --no-root
+
+# Make sure the script is executable
+RUN chmod +x wait-for-it.sh
 
 ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1

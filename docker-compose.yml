@@ -47,6 +47,7 @@ services:
         loki-url: "http://loki:3100/loki/api/v1/push"
     networks:
       - coach-bot-network
+    command: [ "./wait-for-it.sh", "postgres", "uvicorn", "api.core.main:app", "--host", "0.0.0.0", "--port", "8000" ]
 
   worker:
     container_name: coach-bot-worker
@@ -103,6 +104,8 @@ services:
       driver: loki
       options:
         loki-url: "http://loki:3100/loki/api/v1/push"
+    networks:
+      - coach-bot-network
 
   prometheus:
     container_name: coach-bot-prometheus

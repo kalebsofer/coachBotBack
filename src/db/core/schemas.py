@@ -19,7 +19,7 @@ class UserCreate(UserBase):
 class UserRead(UserBase):
     """Schema for reading a User."""
 
-    id: UUID
+    user_id: UUID
     created_at: datetime
     updated_at: datetime
 
@@ -42,7 +42,7 @@ class ChatCreate(ChatBase):
 class ChatRead(ChatBase):
     """Schema for reading a Chat."""
 
-    id: UUID
+    chat_id: UUID
     created_at: datetime
     updated_at: datetime
 
@@ -65,7 +65,7 @@ class MessageCreate(MessageBase):
 class MessageRead(MessageBase):
     """Schema for reading a Message."""
 
-    id: UUID
+    message_id: UUID
     timestamp: datetime
 
     class Config:
@@ -88,7 +88,7 @@ class LogCreate(LogBase):
 class LogRead(LogBase):
     """Schema for reading a Log."""
 
-    id: UUID
+    log_id: UUID
     timestamp: datetime
 
     class Config:

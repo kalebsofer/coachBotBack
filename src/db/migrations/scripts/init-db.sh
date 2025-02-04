@@ -12,15 +12,17 @@ sleep 5
 
 echo "PostgreSQL started, creating database..."
 
+# Add debug output
+echo "Executing SQL with POSTGRES_DB=${POSTGRES_DB}"
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<-EOSQL
     DO
-    $$
+    \$\$
     BEGIN
         IF NOT EXISTS (SELECT FROM pg_database WHERE datname = '${POSTGRES_DB}') THEN
             CREATE DATABASE ${POSTGRES_DB};
         END IF;
     END
-    $$;
+    \$\$;
 EOSQL
 
 echo "Database created or already exists"
@@ -30,6 +32,8 @@ cd /app/db
 export DATABASE_URL="postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@/${POSTGRES_DB}"
 echo "Using alembic.ini at: $(pwd)/alembic.ini"
 
+# Add debug output for database URL
+echo "Using DATABASE_URL: ${DATABASE_URL}"
 echo "Running migrations from $(pwd)"
 echo "Available migration files:"
 ls -la migrations/versions/

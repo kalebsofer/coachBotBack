@@ -124,7 +124,6 @@ class CRUDLog(CRUDBase[Log, LogCreate, LogRead]):
         return list(result.scalars().all())
 
 
-# Instances for each CRUD class
 user = CRUDUser(User)
 chat = CRUDChat(Chat)
 message = CRUDMessage(Message)
