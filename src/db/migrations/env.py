@@ -5,13 +5,11 @@ import time
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
-from db.core.models import Base
+from common.db.models import Base
 from db.core.database import DATABASE_URL, get_sync_url
 
-# this is the Alembic Config object
 config = context.config
 
-# Use sync URL for migrations
 sync_url = get_sync_url(DATABASE_URL)
 config.set_main_option("sqlalchemy.url", sync_url)
 

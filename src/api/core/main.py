@@ -13,10 +13,10 @@ from stream_chat import StreamChat
 from prometheus_fastapi_instrumentator import Instrumentator
 from sqlalchemy import text
 
-from db.core.crud import log as log_crud
-from db.core.crud import message as message_crud
-from db.core.schemas import LogCreate, MessageCreate, ChatCreate, ChatRead
-from db.core.crud import chat as chat_crud
+from common.db.crud import log as log_crud
+from common.db.crud import message as message_crud
+from common.db.schemas import LogCreate, MessageCreate, ChatCreate, ChatRead
+from common.db.crud import chat as chat_crud
 
 from common.db.db import get_session as get_db, wait_for_db
 from .services import ChatService

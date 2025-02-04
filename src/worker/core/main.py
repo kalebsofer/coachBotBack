@@ -13,12 +13,13 @@ from stream_chat import StreamChat
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import declarative_base, sessionmaker
 from common.db.db import get_session as get_db_session
-from db.core.models import Message, Log
+from common.db.models import Message, Log
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 load_dotenv()
+
 
 openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 stream_client = StreamChat(
