@@ -50,7 +50,7 @@ AsyncSessionLocal = async_sessionmaker(
 
 @asynccontextmanager
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
-    """Dependency for obtaining an asynchronous database session."""
+    """Context manager that yields a database session and handles commit/rollback."""
     session = AsyncSessionLocal()
     try:
         yield session
@@ -60,6 +60,12 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
         raise
     finally:
         await session.close()
+
+# NEW: Dependency function to use with FastAPI
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
+    """Dependency function that yields a database session."""
+    async with get_session() as session:
+        yield session
 
 async def wait_for_db(max_retries: int = 5, retry_interval: int = 5):
     """Wait for the database to become available."""

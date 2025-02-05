@@ -1,16 +1,12 @@
-# Start with Python 3.12
 FROM python:3.12-slim as python_base
 
-# Now get PostgreSQL
 FROM postgres:16
 
-# Copy Python from python_base
 COPY --from=python_base /usr/local/bin/python* /usr/local/bin/
 COPY --from=python_base /usr/local/lib/python3.12 /usr/local/lib/python3.12
 COPY --from=python_base /usr/local/include/python3.12 /usr/local/include/python3.12
 COPY --from=python_base /usr/local/lib/libpython3.12.so* /usr/local/lib/
 
-# Install build dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     libpq-dev \
@@ -18,18 +14,17 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Create and activate virtual environment
 RUN python3.12 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Install Python packages
 RUN pip install psycopg2-binary alembic sqlalchemy python-dotenv asyncpg
 
-# Copy initialization scripts
 COPY src/db/migrations/scripts/init-db.sh /docker-entrypoint-initdb.d/
 COPY src/db/migrations /app/db/migrations
 COPY src/db/core /app/db/core
 COPY src/db/alembic.ini /app/db/alembic.ini
+
+COPY src/common /app/common
 
 ENV PYTHONPATH=/app
 

@@ -8,7 +8,7 @@ import httpx
 from sqlalchemy import delete, select
 
 from src.api.core.utils import check_api_health
-from src.common.db.db import AsyncSessionLocal
+from common.db.connect import AsyncSessionLocal
 from src.common.db.models import Chat, Log, Message, User
 
 

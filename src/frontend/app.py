@@ -6,6 +6,7 @@ import requests
 import streamlit as st
 from dotenv import load_dotenv
 
+
 load_dotenv()
 
 # Get API URL from environment, fallback to api:8000 for docker
@@ -19,9 +20,11 @@ st.set_page_config(page_title="CoachBot Chat", page_icon="🤖", layout="centere
 
 st.title("🤖 CoachBot Chat")
 
-# Initialize session state
+# Initialize session state with the test user's ID
+# The user must already exist in Postgres to start a chat
 if "user_id" not in st.session_state:
-    st.session_state.user_id = str(uuid.uuid4())  # Dummy user ID
+    # Test user ID created in Postgres
+    st.session_state.user_id = "d62a2f99-e89b-43ad-b4ba-ec3826266410"
 
 if "chat_id" not in st.session_state:
     st.session_state.chat_id = None

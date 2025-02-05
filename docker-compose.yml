@@ -154,6 +154,8 @@ services:
       - loki_wal:/wal
     command: -config.file=/etc/loki/loki-config.yml
     user: "root"
+    networks:
+      - coach-bot-network
     healthcheck:
       test: [ "CMD", "wget", "--spider", "http://loki:3100/ready" ]
       interval: 30s
@@ -202,6 +204,7 @@ services:
 
 networks:
   coach-bot-network:
+    # name: coach-bot-network
     driver: bridge
   monitoring:
     driver: bridge

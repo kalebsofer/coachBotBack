@@ -17,8 +17,7 @@ from common.db.crud import log as log_crud
 from common.db.crud import message as message_crud
 from common.db.schemas import LogCreate, MessageCreate, ChatCreate, ChatRead
 from common.db.crud import chat as chat_crud
-
-from common.db.db import get_session as get_db, wait_for_db
+from common.db.connect import get_db as get_db, wait_for_db
 from .services import ChatService
 from .logging_config import configure_logging
 
@@ -98,11 +97,10 @@ async def root():
 
 
 @app.get("/health")
-async def health_check():
-    # Quick db check using async context manager
-    async with get_db() as db:
-        await db.execute(text("SELECT 1"))
-        return {"status": "healthy"}
+async def health_check(db: AsyncSession = Depends(get_db)):
+    # Quick db check using dependency injection
+    await db.execute(text("SELECT 1"))
+    return {"status": "healthy"}
 
 
 class UserInput(BaseModel):

@@ -12,7 +12,7 @@ from openai import OpenAI
 from stream_chat import StreamChat
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import declarative_base, sessionmaker
-from common.db.db import get_session as get_db_session
+from common.db.connect import get_session as get_db_session
 from common.db.models import Message, Log
 
 logging.basicConfig(level=logging.INFO)
