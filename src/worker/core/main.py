@@ -32,39 +32,32 @@ stream_client = StreamChat(
 async def process_message(message: Dict[str, Any]) -> None:
     """Process a message from the queue."""
     try:
-        # Determine if the message is from the user
         user_message = message.get("user_message", True)
 
         if user_message:
             logger.info(f"Picked up user message for processing for chat {message['chat_id']}")
             
-            # Log before sending request to LLM
             logger.info(f"Sending request to LLM for chat: {message['chat_id']} with content: {message['content'][:50]}...")
 
-            # Process user message with OpenAI
             response = await openai_client.chat.completions.create(
                 model="gpt-4", messages=[{"role": "user", "content": message["content"]}]
             )
             generated_message = response.choices[0].message.content
 
-            # Log received LLM response
             logger.info(f"Received LLM response for chat {message['chat_id']} with content: {generated_message[:50]}...")
 
-            # Send generated message back to the chat
             channel = stream_client.channel("messaging", message["chat_id"])
             await channel.create(data={"members": [message["user_id"]]})
             await channel.send_message(
                 {"text": generated_message}, user_id=message["user_id"]
             )
 
-            # Log the generated message in the Messages table (update audit trail)
             await log_message(
                 chat_id=message["chat_id"],
                 content=generated_message,
                 user_message=False  # System-generated message
             )
 
-            # Log and record an audit trail entry in the Logs table
             logger.info(f"Forwarded LLM response to chat with chat_id {message['chat_id']}")
             await log_audit(
                 action="LLM response processed & forwarded",
@@ -73,7 +66,6 @@ async def process_message(message: Dict[str, Any]) -> None:
 
             logger.info(f"Successfully processed message for chat {message['chat_id']}")
         else:
-            # Handle system-generated messages if needed
             logger.info(f"Received system message for chat {message['chat_id']}")
     except Exception as e:
         logger.error(f"Error processing message: {str(e)}", exc_info=True)
