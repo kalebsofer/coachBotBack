@@ -23,7 +23,6 @@ COPY src/db/migrations/scripts/init-db.sh /docker-entrypoint-initdb.d/
 COPY src/db/migrations /app/db/migrations
 COPY src/db/core /app/db/core
 COPY src/db/alembic.ini /app/db/alembic.ini
-
 COPY src/common /app/common
 
 ENV PYTHONPATH=/app

@@ -19,7 +19,6 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # Create users table
     op.create_table(
         'users',
         sa.Column('user_id', sa.UUID(), nullable=False),
@@ -30,7 +29,6 @@ def upgrade() -> None:
         sa.UniqueConstraint('email')
     )
 
-    # Create chats table
     op.create_table(
         'chats',
         sa.Column('chat_id', sa.UUID(), nullable=False),
@@ -44,16 +42,15 @@ def upgrade() -> None:
         'messages',
         sa.Column('message_id', sa.UUID(), nullable=False),
         sa.Column('chat_id', sa.UUID(), nullable=False),
-        sa.Column('sender_id', sa.UUID(), nullable=False),  # New column for sender
+        sa.Column('user_id', sa.UUID(), nullable=False),
         sa.Column('content', sa.Text(), nullable=False),
         sa.Column('user_message', sa.Boolean(), nullable=False),
         sa.Column('timestamp', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
         sa.ForeignKeyConstraint(['chat_id'], ['chats.chat_id'], ondelete='CASCADE'),
-        sa.ForeignKeyConstraint(['sender_id'], ['users.user_id'], ondelete='CASCADE'),
+        sa.ForeignKeyConstraint(['user_id'], ['users.user_id'], ondelete='CASCADE'),
         sa.PrimaryKeyConstraint('message_id')
     )
 
-    # Create logs table
     op.create_table(
         'logs',
         sa.Column('log_id', sa.UUID(), nullable=False),

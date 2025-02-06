@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, ConfigDict
 
 # ----- User Schemas -----
 class UserBase(BaseModel):
@@ -37,14 +37,12 @@ class ChatRead(ChatBase):
 # ----- Message Schemas -----
 class MessageBase(BaseModel):
     chat_id: UUID
-    sender_id: UUID = Field(..., alias="user_id")
+    user_id: UUID
     content: str
     user_message: bool = True
 
 class MessageCreate(MessageBase):
-    class Config:
-        # In Pydantic v2, enable population by alias for input data.
-        populate_by_alias = True
+    model_config = ConfigDict(populate_by_alias=True)
 
 class MessageRead(MessageBase):
     message_id: UUID

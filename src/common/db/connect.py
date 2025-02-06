@@ -61,7 +61,7 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
     finally:
         await session.close()
 
-# NEW: Dependency function to use with FastAPI
+# Dependency function to use with FastAPI
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """Dependency function that yields a database session."""
     async with get_session() as session:

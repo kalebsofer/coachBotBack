@@ -20,7 +20,7 @@ class User(Base):
 
     # Relationships
     chats: Mapped[list["Chat"]] = relationship(back_populates="user")
-    messages: Mapped[list["Message"]] = relationship(back_populates="sender")
+    messages: Mapped[list["Message"]] = relationship(back_populates="user")
     logs: Mapped[list["Log"]] = relationship(back_populates="user")
 
 class Chat(Base):
@@ -42,14 +42,14 @@ class Message(Base):
 
     message_id: Mapped[uuid.UUID] = mapped_column(UUID, primary_key=True, default=uuid.uuid4)
     chat_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("chats.chat_id", ondelete="CASCADE"))
-    sender_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.user_id", ondelete="CASCADE"))
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.user_id", ondelete="CASCADE"))
     content: Mapped[str] = mapped_column(Text, nullable=False)
     user_message: Mapped[bool] = mapped_column(Boolean, nullable=False)
     timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships
     chat: Mapped["Chat"] = relationship("Chat", back_populates="messages")
-    sender: Mapped["User"] = relationship("User", back_populates="messages")
+    user: Mapped["User"] = relationship("User", back_populates="messages")
 
 class Log(Base):
     """Log model for audit trail."""

@@ -110,7 +110,7 @@ async def check_database() -> None:
             print("\nMessages in database:")
             for msg in messages:
                 print(f"Content: {msg.content}")
-                print(f"Sender: {msg.sender_id}")
+                print(f"User: {msg.user_id}")
                 print(f"Chat: {msg.chat_id}")
                 print(f"Timestamp: {msg.timestamp}")
                 print("---")

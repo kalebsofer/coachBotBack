@@ -161,7 +161,7 @@ async def send_message(message: MessageRequest, db: AsyncSession = Depends(get_d
                 db,
                 obj_in=MessageCreate(
                     chat_id=chat_id, 
-                    sender_id=user_id, 
+                    user_id=user_id, 
                     content=message.content
                 ),
             )
@@ -213,7 +213,7 @@ async def send_message(message: MessageRequest, db: AsyncSession = Depends(get_d
                 db,
                 obj_in=MessageCreate(
                     chat_id=chat_id,
-                    sender_id=user_id,  # or a special AI user ID
+                    user_id=user_id,  # or a special AI user ID
                     content=ai_response,
                 ),
             )

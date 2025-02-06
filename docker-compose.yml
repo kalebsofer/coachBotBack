@@ -44,7 +44,7 @@ services:
     logging:
       driver: loki
       options:
-        loki-url: "http://loki:3100/loki/api/v1/push"
+        loki-url: "http://localhost:3100/loki/api/v1/push"
     networks:
       - coach-bot-network
     command: [ "./wait-for-it.sh", "postgres", "uvicorn", "api.core.main:app", "--host", "0.0.0.0", "--port", "8000" ]
@@ -63,7 +63,7 @@ services:
     logging:
       driver: loki
       options:
-        loki-url: "http://loki:3100/loki/api/v1/push"
+        loki-url: "http://localhost:3100/loki/api/v1/push"
     networks:
       - coach-bot-network
     environment:
@@ -103,7 +103,7 @@ services:
     logging:
       driver: loki
       options:
-        loki-url: "http://loki:3100/loki/api/v1/push"
+        loki-url: "http://localhost:3100/loki/api/v1/push"
     networks:
       - coach-bot-network
 
@@ -169,6 +169,7 @@ services:
       dockerfile: docker/monitoring/grafana/Dockerfile
     ports:
       - "3000:3000"
+    env_file: .env
     volumes:
       - ./src/monitoring/grafana/provisioning:/etc/grafana/provisioning
       - grafana_data:/var/lib/grafana
@@ -177,6 +178,8 @@ services:
         condition: service_healthy
       loki:
         condition: service_healthy
+    networks:
+      - coach-bot-network
     healthcheck:
       test: [ "CMD", "wget", "--spider", "http://grafana:3000/api/health" ]
       interval: 30s
@@ -198,7 +201,7 @@ services:
     logging:
       driver: loki
       options:
-        loki-url: "http://loki:3100/loki/api/v1/push"
+        loki-url: "http://localhost:3100/loki/api/v1/push"
     networks:
       - coach-bot-network
 
