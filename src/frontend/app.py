@@ -5,6 +5,7 @@ import uuid
 import requests
 import streamlit as st
 from dotenv import load_dotenv
+from streamlit_autorefresh import st_autorefresh
 
 
 load_dotenv()
@@ -49,10 +50,24 @@ if st.button("New Chat"):
 # Display chat messages if a chat is active
 if st.session_state.chat_id:
     st.write(f"Chat ID: {st.session_state.chat_id}")
-
+    
     if "messages" not in st.session_state:
         st.session_state.messages = []
-    
+
+    # If at least one message exists, start polling for latest messages every 5 seconds.
+    if st.session_state.messages:
+        # Import st_autorefresh if not already imported
+        from streamlit_autorefresh import st_autorefresh
+        st_autorefresh(interval=5000, limit=100, key="chat_autorefresh")
+
+        poll_url = f"{API_URL}/api/v1/chats/{st.session_state.chat_id}"
+        try:
+            response = requests.get(poll_url)
+            response.raise_for_status()
+            st.session_state.messages = response.json()
+        except Exception as e:
+            st.error(f"Error polling chat messages: {e}")
+
     if st.session_state.messages:
         logger.info(f"UI Event: Rendering {len(st.session_state.messages)} messages for chat {st.session_state.chat_id} for user {st.session_state.user_id}.")
 

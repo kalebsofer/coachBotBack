@@ -9,7 +9,6 @@ from datetime import datetime
 import pika
 from dotenv import load_dotenv
 from openai import OpenAI
-from stream_chat import StreamChat
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import declarative_base, sessionmaker
 from common.db.connect import get_session as get_db_session
@@ -26,13 +25,6 @@ if not openai_api_key:
     raise Exception("OPENAI_API_KEY is not set in the environment.")
 
 client = OpenAI(api_key=openai_api_key)
-
-stream_client = StreamChat(
-    api_key=os.getenv("STREAM_API_KEY"),
-    api_secret=os.getenv("STREAM_SECRET"),
-    location="dublin",
-)
-
 
 async def process_message(message: Dict[str, Any]) -> None:
     """Process a message from the queue."""
@@ -56,19 +48,10 @@ async def process_message(message: Dict[str, Any]) -> None:
 
             logger.info(f"Received LLM response for chat {message['chat_id']} with content: {generated_message[:50]}...")
 
-            channel = stream_client.channel("messaging", message["chat_id"])
-            await channel.create(data={"members": [message["user_id"]]})
-            await channel.send_message(
-                {"text": generated_message}, user_id=message["user_id"]
-            )
+            # Instead of sending the message via StreamChat,
+            # we now log the assistant's response into the database.
+            await log_message(message["chat_id"], generated_message, user_message=False)
 
-            await log_message(
-                chat_id=message["chat_id"],
-                content=generated_message,
-                user_message=False  # System-generated message
-            )
-
-            logger.info(f"Forwarded LLM response to chat with chat_id {message['chat_id']}")
             await log_audit(
                 action="LLM response processed & forwarded",
                 details=f"Chat ID: {message['chat_id']}, Response: {generated_message[:50]}..."

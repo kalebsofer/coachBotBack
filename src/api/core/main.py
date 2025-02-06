@@ -203,7 +203,7 @@ async def send_message(message: MessageRequest, db: AsyncSession = Depends(get_d
         try:
             # Generate AI response
             response = client.chat.completions.create(
-                model="gpt-4",
+                model="gpt-4o-mini",
                 messages=[{"role": "user", "content": message.content}]
             )
             ai_response = response.choices[0].message.content
