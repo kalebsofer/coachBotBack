@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from openai import OpenAI
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
-from stream_chat import StreamChat
+# from stream_chat import StreamChat
 from prometheus_fastapi_instrumentator import Instrumentator
 from sqlalchemy import text
 
@@ -28,13 +28,8 @@ try:
     load_dotenv()
     logger.info("Environment variables loaded")
 
-    # Initialize clients
+    # Initialize the OpenAI client (StreamChat is not used with the Streamlit UI)
     client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-    stream_client = StreamChat(
-        api_key=os.getenv("STREAM_API_KEY"),
-        api_secret=os.getenv("STREAM_SECRET"),
-        location="dublin",
-    )
     logger.info("API clients initialized")
 except Exception as e:
     logger.error(f"Error during initialization: {str(e)}")
@@ -60,7 +55,25 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-chat_service = ChatService(client, stream_client)
+# After your existing imports, add the following dummy implementation:
+# -----------------------------------------------------------
+# Dummy chat client to satisfy ChatService dependency since StreamChat is removed.
+class DummyChatClient:
+    def channel(self, channel_type, channel_id):
+        class DummyChannel:
+            def create(self, data):
+                # Do nothing
+                pass
+            def send_message(self, message, user_id):
+                # Do nothing
+                pass
+        return DummyChannel()
+# -----------------------------------------------------------
+
+# Then, update the instantiation of ChatService.
+# Previous code:
+# chat_service = ChatService(client)
+chat_service = ChatService(client, DummyChatClient())
 
 @app.on_event("startup")
 async def startup_event():
@@ -192,15 +205,6 @@ async def send_message(message: MessageRequest, db: AsyncSession = Depends(get_d
         )
 
         try:
-            # Stream Chat integration
-            channel = stream_client.channel("messaging", str(chat_id))
-            channel.create(data={"members": [str(user_id)]})
-            channel.send_message({"text": message.content}, user_id=str(user_id))
-        except Exception as stream_error:
-            logger.error(f"Stream API error: {str(stream_error)}")
-            # Don't fail if Stream fails
-
-        try:
             # Generate AI response
             response = client.chat.completions.create(
                 model="gpt-4o-mini",
@@ -216,12 +220,6 @@ async def send_message(message: MessageRequest, db: AsyncSession = Depends(get_d
                     user_id=user_id,  # or a special AI user ID
                     content=ai_response,
                 ),
-            )
-
-            # Send AI response to Stream Chat
-            channel.send_message(
-                {"text": ai_response}, 
-                user_id="ai_assistant"
             )
 
             return {
