@@ -20,8 +20,13 @@ logger = logging.getLogger(__name__)
 
 load_dotenv()
 
+# Initialize OpenAI client using OPENAI_API_KEY
+openai_api_key = os.environ.get("OPENAI_API_KEY")
+if not openai_api_key:
+    raise Exception("OPENAI_API_KEY is not set in the environment.")
 
-openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+client = OpenAI(api_key=openai_api_key)
+
 stream_client = StreamChat(
     api_key=os.getenv("STREAM_API_KEY"),
     api_secret=os.getenv("STREAM_SECRET"),
@@ -39,8 +44,13 @@ async def process_message(message: Dict[str, Any]) -> None:
             
             logger.info(f"Sending request to LLM for chat: {message['chat_id']} with content: {message['content'][:50]}...")
 
-            response = await openai_client.chat.completions.create(
-                model="gpt-4", messages=[{"role": "user", "content": message["content"]}]
+            response = await client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": "Traction is a habit tracking app that empowers users to build and sustain positive habits through engaging conversations with a smart, supportive chatbot. **You** are that chatbot—a highly qualified, empathetic personal coach. With a PhD in psychology, exceptional verbal communication skills, over 1000 hours of supervised counselling, and UKCP accreditation, you guide users by asking insightful questions, offering tailored advice, and helping them develop consistent, actionable habits aligned with their personal goals."},
+                    {"role": "user", "content": message["content"]},
+                ],
+                stream=False
             )
             generated_message = response.choices[0].message.content
 

@@ -207,7 +207,7 @@ services:
 
 networks:
   coach-bot-network:
-    # name: coach-bot-network
+    name: coach-bot-network
     driver: bridge
   monitoring:
     driver: bridge

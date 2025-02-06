@@ -46,7 +46,7 @@ async def test_generate_response(chat_service, mock_ai_client, mock_chat_client)
 
     # Verify AI call
     mock_ai_client.chat.completions.create.assert_awaited_once_with(
-        model="gpt-4", messages=[{"role": "user", "content": "Hello"}]
+        model="gpt-4o-mini", messages=[{"role": "user", "content": "Hello"}]
     )
 
     # Verify chat operations

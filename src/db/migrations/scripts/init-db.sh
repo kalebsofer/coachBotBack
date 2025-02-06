@@ -59,5 +59,13 @@ set +x
 
 echo "Migrations completed successfully"
 
+echo "Inserting test user..."
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-'EOSQL'
+    INSERT INTO users (user_id, username, email, created_at)
+    VALUES ('d62a2f99-e89b-43ad-b4ba-ec3826266410', 'testuser', 'test@example.com', NOW())
+    ON CONFLICT (user_id) DO NOTHING;
+EOSQL
+echo "Test user inserted successfully"
+
 psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c 'SELECT 1' || exit 1
 echo "PostgreSQL is fully initialized and ready" 

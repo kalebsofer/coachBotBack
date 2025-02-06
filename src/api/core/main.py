@@ -165,7 +165,7 @@ async def send_message(message: MessageRequest, db: AsyncSession = Depends(get_d
                     content=message.content
                 ),
             )
-            logger.info(f"Message saved to database with ID: {db_message.id}")
+            logger.info(f"Message saved to database with ID: {db_message.message_id}")
         except Exception as db_error:
             logger.error(f"Database error: {str(db_error)}")
             raise HTTPException(status_code=500, detail="Database error") from db_error
@@ -226,7 +226,7 @@ async def send_message(message: MessageRequest, db: AsyncSession = Depends(get_d
 
             return {
                 "status": "success",
-                "message_id": str(db_message.id),
+                "message_id": str(db_message.message_id),
                 "chat_id": str(chat_id),
                 "user_id": str(user_id),
                 "content": ai_response,  # Return AI response instead of user message
@@ -234,13 +234,13 @@ async def send_message(message: MessageRequest, db: AsyncSession = Depends(get_d
 
         except Exception as ai_error:
             logger.error(f"AI response error: {str(ai_error)}")
-            # Return original message if AI fails
+            # Return an error message if AI fails
             return {
-                "status": "partial_success",
-                "message_id": str(db_message.id),
+                "status": "error",
+                "message_id": str(db_message.message_id),
                 "chat_id": str(chat_id),
                 "user_id": str(user_id),
-                "content": message.content,
+                "content": "Error connecting to the server, please try again later.",
             }
 
     except HTTPException:

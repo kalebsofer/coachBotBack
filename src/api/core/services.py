@@ -30,7 +30,7 @@ class ChatService:
     async def _get_ai_response(self, message: str) -> str:
         """Get response from AI service."""
         response = await self.ai_client.chat.completions.create(
-            model="gpt-4", messages=[{"role": "user", "content": message}]
+            model="gpt-4o-mini", messages=[{"role": "user", "content": message}]
         )
         return response.choices[0].message.content
 
