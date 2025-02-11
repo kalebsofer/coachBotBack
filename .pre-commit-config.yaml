@@ -25,14 +25,3 @@ repos:
       - id: isort
         args: ["--profile", "black", "--filter-files"]
         stages: [pre-commit]
-
-  - repo: https://github.com/PyCQA/autoflake
-    rev: v1.4
-    hooks:
-      - id: autoflake
-        additional_dependencies: ['setuptools', 'wheel']
-        args: [
-          "--remove-all-unused-imports",
-          "--remove-unused-variables",
-          "--in-place"
-        ]
