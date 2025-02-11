@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+
 from dotenv import load_dotenv
 from openai import OpenAI
 
@@ -13,6 +14,7 @@ if not openai_api_key:
 
 client = OpenAI(api_key=openai_api_key)
 
+
 def test_openai_api():
     try:
         response = client.chat.completions.create(
@@ -25,6 +27,7 @@ def test_openai_api():
     except Exception as e:
         # If there is an error, print the error details
         print("Error during API call:", str(e))
+
 
 # # Get the Deepseek API key from environment variables and create the Deepseek client
 # api_ds_key = os.environ.get("DEEPSEEK_API_KEY")
@@ -51,5 +54,5 @@ def test_openai_api():
 #     except Exception as e:
 #         print("Error during API call:", str(e))
 
-if __name__ == '__main__':
-    test_openai_api() 
+if __name__ == "__main__":
+    test_openai_api()

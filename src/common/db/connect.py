@@ -1,13 +1,13 @@
-import os
 import asyncio
 import logging
-from typing import AsyncGenerator
+import os
 from contextlib import asynccontextmanager
+from typing import AsyncGenerator
 
 from dotenv import load_dotenv
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
-from sqlalchemy.exc import OperationalError
 from sqlalchemy import text
+from sqlalchemy.exc import OperationalError
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 load_dotenv()
 
@@ -15,23 +15,26 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
     raise ValueError("DATABASE_URL is not set. Please check your .env file.")
 
+
 def get_sync_url(url: str) -> str:
     """Convert an async URL to a sync URL for migrations."""
     url = url.replace("localhost", "postgres")
-    if 'postgresql+asyncpg://' in url:
-        return url.replace('postgresql+asyncpg://', 'postgresql+psycopg2://')
-    if 'postgresql://' in url:
-        return url.replace('postgresql://', 'postgresql+psycopg2://')
+    if "postgresql+asyncpg://" in url:
+        return url.replace("postgresql+asyncpg://", "postgresql+psycopg2://")
+    if "postgresql://" in url:
+        return url.replace("postgresql://", "postgresql+psycopg2://")
     return url
+
 
 def get_async_url(url: str) -> str:
     """Convert a URL to an async-friendly URL for application use."""
     url = url.replace("localhost", "postgres")
-    if 'postgresql+psycopg2://' in url:
-        return url.replace('postgresql+psycopg2://', 'postgresql+asyncpg://')
-    if 'postgresql://' in url:
-        return url.replace('postgresql://', 'postgresql+asyncpg://')
+    if "postgresql+psycopg2://" in url:
+        return url.replace("postgresql+psycopg2://", "postgresql+asyncpg://")
+    if "postgresql://" in url:
+        return url.replace("postgresql://", "postgresql+asyncpg://")
     return url
+
 
 engine = create_async_engine(
     get_async_url(DATABASE_URL),
@@ -39,14 +42,13 @@ engine = create_async_engine(
     pool_pre_ping=True,
     pool_recycle=300,
     pool_size=5,
-    max_overflow=10
+    max_overflow=10,
 )
 
 AsyncSessionLocal = async_sessionmaker(
-    engine,
-    class_=AsyncSession,
-    expire_on_commit=False
+    engine, class_=AsyncSession, expire_on_commit=False
 )
+
 
 @asynccontextmanager
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
@@ -61,11 +63,13 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
     finally:
         await session.close()
 
+
 # Dependency function to use with FastAPI
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """Dependency function that yields a database session."""
     async with get_session() as session:
         yield session
+
 
 async def wait_for_db(max_retries: int = 5, retry_interval: int = 5):
     """Wait for the database to become available."""
@@ -77,5 +81,7 @@ async def wait_for_db(max_retries: int = 5, retry_interval: int = 5):
         except OperationalError as e:
             if attempt == max_retries - 1:
                 raise
-            logging.warning(f"Database connection attempt {attempt + 1} failed, retrying in {retry_interval} seconds...")
+            logging.warning(
+                f"Database connection attempt {attempt + 1} failed, retrying in {retry_interval} seconds..."
+            )
             await asyncio.sleep(retry_interval)

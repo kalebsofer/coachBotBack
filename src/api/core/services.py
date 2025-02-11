@@ -16,7 +16,7 @@ class ChatService:
         self, user_id: str, message: str, chat_id: str
     ) -> ChatResponse:
         """Generate AI response and handle chat interactions."""
-        
+
         ai_response = await self._get_ai_response(message)
 
         await self._send_to_chat(chat_id, user_id, ai_response)

@@ -21,6 +21,7 @@ ModelType = TypeVar("ModelType", bound=Base)
 CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
 ReadSchemaType = TypeVar("ReadSchemaType", bound=BaseModel)
 
+
 class CRUDBase(Generic[ModelType, CreateSchemaType, ReadSchemaType]):
     def __init__(self, model: Type[ModelType]):
         self.model = model

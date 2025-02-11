@@ -7,11 +7,9 @@ from typing import Any, Dict
 import httpx
 from sqlalchemy import delete, select
 
-from src.api.core.utils import check_api_health
 from common.db.connect import AsyncSessionLocal
+from src.api.core.utils import check_api_health
 from src.common.db.models import Chat, Log, Message, User
-
-
 
 # Configure logging
 logging.basicConfig(

@@ -1,6 +1,7 @@
 import logging
 import sys
 
+
 def configure_logging():
     root_logger = logging.getLogger()
     root_logger.setLevel(logging.INFO)
@@ -9,7 +10,7 @@ def configure_logging():
     console_handler.setLevel(logging.INFO)
 
     formatter = logging.Formatter(
-        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
     console_handler.setFormatter(formatter)
 
@@ -18,4 +19,4 @@ def configure_logging():
     uvicorn_logger = logging.getLogger("uvicorn.access")
     uvicorn_logger.handlers = [console_handler]
 
-    return root_logger 
+    return root_logger

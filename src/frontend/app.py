@@ -7,7 +7,6 @@ import streamlit as st
 from dotenv import load_dotenv
 from streamlit_autorefresh import st_autorefresh
 
-
 load_dotenv()
 
 # Get API URL from environment, fallback to api:8000 for docker
@@ -32,25 +31,30 @@ if "chat_id" not in st.session_state:
 
 # New Chat Button
 if st.button("New Chat"):
-    logger.info(f"UI Event: 'New Chat' button clicked by user {st.session_state.user_id}")
+    logger.info(
+        f"UI Event: 'New Chat' button clicked by user {st.session_state.user_id}"
+    )
     # Send request to create a new chat
     response = requests.post(
-        f"{API_URL}/api/v1/chats",
-        json={"user_id": st.session_state.user_id}
+        f"{API_URL}/api/v1/chats", json={"user_id": st.session_state.user_id}
     )
     if response.status_code == 200:
         chat_data = response.json()
         st.session_state.chat_id = chat_data["chat_id"]
-        logger.info(f"New Chat: User {st.session_state.user_id} started chat {st.session_state.chat_id}.")
+        logger.info(
+            f"New Chat: User {st.session_state.user_id} started chat {st.session_state.chat_id}."
+        )
         st.success("New chat started!")
     else:
-        logger.error(f"UI Error: Failed to start a new chat for user {st.session_state.user_id}. Response: {response.text}")
+        logger.error(
+            f"UI Error: Failed to start a new chat for user {st.session_state.user_id}. Response: {response.text}"
+        )
         st.error("Failed to start a new chat.")
 
 # Display chat messages if a chat is active
 if st.session_state.chat_id:
     st.write(f"Chat ID: {st.session_state.chat_id}")
-    
+
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
@@ -58,6 +62,7 @@ if st.session_state.chat_id:
     if st.session_state.messages:
         # Import st_autorefresh if not already imported
         from streamlit_autorefresh import st_autorefresh
+
         st_autorefresh(interval=5000, limit=100, key="chat_autorefresh")
 
         poll_url = f"{API_URL}/api/v1/chats/{st.session_state.chat_id}"
@@ -69,7 +74,9 @@ if st.session_state.chat_id:
             st.error(f"Error polling chat messages: {e}")
 
     if st.session_state.messages:
-        logger.info(f"UI Event: Rendering {len(st.session_state.messages)} messages for chat {st.session_state.chat_id} for user {st.session_state.user_id}.")
+        logger.info(
+            f"UI Event: Rendering {len(st.session_state.messages)} messages for chat {st.session_state.chat_id} for user {st.session_state.user_id}."
+        )
 
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
@@ -79,16 +86,20 @@ if st.session_state.chat_id:
         with st.chat_message("user"):
             st.markdown(prompt)
         st.session_state.messages.append({"role": "user", "content": prompt})
-        logger.info(f"UI Event: User message submitted in chat {st.session_state.chat_id}. User: {st.session_state.user_id}, Content: {prompt}")
+        logger.info(
+            f"UI Event: User message submitted in chat {st.session_state.chat_id}. User: {st.session_state.user_id}, Content: {prompt}"
+        )
 
         try:
-            logger.info(f"UI Event: Sending user message for chat {st.session_state.chat_id}. User: {st.session_state.user_id}, Content: {prompt}")
+            logger.info(
+                f"UI Event: Sending user message for chat {st.session_state.chat_id}. User: {st.session_state.user_id}, Content: {prompt}"
+            )
             response = requests.post(
                 f"{API_URL}/api/v1/chat/message",
                 json={
                     "chat_id": st.session_state.chat_id,
                     "user_id": st.session_state.user_id,
-                    "content": prompt
+                    "content": prompt,
                 },
             )
             response.raise_for_status()
@@ -97,7 +108,9 @@ if st.session_state.chat_id:
 
             with st.chat_message("assistant"):
                 st.markdown(assistant_response)
-            logger.info(f"UI Event: Displayed assistant response for chat {st.session_state.chat_id}")
+            logger.info(
+                f"UI Event: Displayed assistant response for chat {st.session_state.chat_id}"
+            )
             st.session_state.messages.append(
                 {"role": "assistant", "content": assistant_response}
             )

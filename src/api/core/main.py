@@ -1,25 +1,28 @@
+import asyncio
 import logging
 import os
 import uuid
-import asyncio
 
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, HTTPException, Body
+from fastapi import Body, Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from openai import OpenAI
-from pydantic import BaseModel, Field
-from sqlalchemy.ext.asyncio import AsyncSession
+
 # from stream_chat import StreamChat
 from prometheus_fastapi_instrumentator import Instrumentator
+from pydantic import BaseModel, Field
 from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from common.db.connect import get_db as get_db
+from common.db.connect import wait_for_db
+from common.db.crud import chat as chat_crud
 from common.db.crud import log as log_crud
 from common.db.crud import message as message_crud
-from common.db.schemas import LogCreate, MessageCreate, ChatCreate, ChatRead
-from common.db.crud import chat as chat_crud
-from common.db.connect import get_db as get_db, wait_for_db
-from .services import ChatService
+from common.db.schemas import ChatCreate, ChatRead, LogCreate, MessageCreate
+
 from .logging_config import configure_logging
+from .services import ChatService
 
 logger = configure_logging()
 logger.info("Starting API application initialization")
@@ -55,6 +58,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 # Dummy chat client to satisfy ChatService dependency while StreamChat is removed.
 class DummyChatClient:
     def channel(self, channel_type, channel_id):
@@ -62,10 +66,14 @@ class DummyChatClient:
             def create(self, data):
                 # Do nothing
                 pass
+
             def send_message(self, message, user_id):
                 # Do nothing
                 pass
+
         return DummyChannel()
+
+
 # -----------------------------------------------------------
 
 # Then, update the instantiation of ChatService.
@@ -73,11 +81,12 @@ class DummyChatClient:
 # chat_service = ChatService(client)
 chat_service = ChatService(client, DummyChatClient())
 
+
 @app.on_event("startup")
 async def startup_event():
     logger.info("=== API Service Startup ===")
     logger.info("Checking environment variables...")
-    
+
     required_vars = ["DATABASE_URL", "OPENAI_API_KEY", "STREAM_API_KEY"]
     for var in required_vars:
         if os.getenv(var):
@@ -85,7 +94,7 @@ async def startup_event():
         else:
             logger.error(f"✗ {var} is not configured")
             raise ValueError(f"Missing required environment variable: {var}")
-    
+
     logger.info("Testing database connection...")
     try:
         await wait_for_db()
@@ -156,7 +165,7 @@ async def send_message(message: MessageRequest, db: AsyncSession = Depends(get_d
             f"Received user message from frontend - user_id: {message.user_id}, "
             f"chat_id: {message.chat_id}, content: {message.content[:50]}..."
         )
-        
+
         try:
             chat_id = uuid.UUID(message.chat_id)
             user_id = uuid.UUID(message.user_id)
@@ -169,9 +178,7 @@ async def send_message(message: MessageRequest, db: AsyncSession = Depends(get_d
             db_message = await message_crud.create(
                 db,
                 obj_in=MessageCreate(
-                    chat_id=chat_id, 
-                    user_id=user_id, 
-                    content=message.content
+                    chat_id=chat_id, user_id=user_id, content=message.content
                 ),
             )
             logger.info(f"Message saved to database with ID: {db_message.message_id}")
@@ -204,7 +211,7 @@ async def send_message(message: MessageRequest, db: AsyncSession = Depends(get_d
             # Generate AI response
             response = client.chat.completions.create(
                 model="gpt-4o-mini",
-                messages=[{"role": "user", "content": message.content}]
+                messages=[{"role": "user", "content": message.content}],
             )
             ai_response = response.choices[0].message.content
 
@@ -248,7 +255,7 @@ async def send_message(message: MessageRequest, db: AsyncSession = Depends(get_d
 async def create_chat(chat_data: ChatCreate, db: AsyncSession = Depends(get_db)):
     """
     Create a new chat session for the provided user.
-    
+
     Expected JSON payload example:
     {
         "user_id": "8fe294f5-bddc-48a2-83b1-357338df9642"
@@ -256,7 +263,9 @@ async def create_chat(chat_data: ChatCreate, db: AsyncSession = Depends(get_db))
     """
     try:
         new_chat = await chat_crud.create(db, obj_in=chat_data)
-        logger.info(f"Created new chat with chat_id: {new_chat.chat_id} for user {chat_data.user_id}")
+        logger.info(
+            f"Created new chat with chat_id: {new_chat.chat_id} for user {chat_data.user_id}"
+        )
         return {"chat_id": str(new_chat.chat_id)}
     except Exception as e:
         logger.error(f"Error creating chat: {str(e)}", exc_info=True)
@@ -269,18 +278,21 @@ async def get_chat(chat_id: str, db: AsyncSession = Depends(get_db)):
     chat = await chat_crud.get(db, id=uuid.UUID(chat_id))
     if not chat:
         raise HTTPException(status_code=404, detail="Chat not found")
-    
+
     # Transform the messages to match the frontend expected format.
     messages = []
     for msg in chat.messages:
         # Determine role based on the user_message boolean
         role = "user" if msg.user_message else "assistant"
-        messages.append({
-            "role": role,
-            "content": msg.content,
-            "timestamp": msg.timestamp.isoformat() if msg.timestamp else None,
-        })
+        messages.append(
+            {
+                "role": role,
+                "content": msg.content,
+                "timestamp": msg.timestamp.isoformat() if msg.timestamp else None,
+            }
+        )
     return messages
+
 
 logging.basicConfig(level=logging.INFO)
 logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)

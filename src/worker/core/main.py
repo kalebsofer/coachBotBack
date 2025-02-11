@@ -2,18 +2,19 @@ import asyncio
 import json
 import logging
 import os
-from typing import Any, Dict
+import sys
 import uuid
 from datetime import datetime
-import sys
+from typing import Any, Dict
 
 import pika
 from dotenv import load_dotenv
 from openai import OpenAI
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import declarative_base, sessionmaker
+
 from common.db.connect import get_session as get_db_session
-from common.db.models import Message, Log
+from common.db.models import Log, Message
 
 logging.basicConfig(level=logging.INFO, stream=sys.stdout, force=True)
 logger = logging.getLogger(__name__)
@@ -28,14 +29,17 @@ if not openai_api_key:
 
 client = OpenAI(api_key=openai_api_key)
 
+
 async def process_message(message: Dict[str, Any]) -> None:
     """Process a message from the queue."""
     try:
         user_message = message.get("user_message", True)
 
         if user_message:
-            logger.info(f"Picked up user message for processing for chat {message['chat_id']}")
-            
+            logger.info(
+                f"Picked up user message for processing for chat {message['chat_id']}"
+            )
+
             # Define the system prompt explicitly.
             system_prompt = (
                 "Traction is a habit tracking app that empowers users to build and sustain positive habits "
@@ -52,19 +56,21 @@ async def process_message(message: Dict[str, Any]) -> None:
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_content},
             ]
-            
+
             # Log the payload being sent to the LLM for debugging.
             logger.info(f"Sending messages to LLM: {messages_payload}")
 
-            logger.info(f"Sending request to LLM for chat: {message['chat_id']} with content: {user_content[:50]}...")
+            logger.info(
+                f"Sending request to LLM for chat: {message['chat_id']} with content: {user_content[:50]}..."
+            )
             response = await client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=messages_payload,
-                stream=False
+                model="gpt-4o-mini", messages=messages_payload, stream=False
             )
             generated_message = response.choices[0].message.content
 
-            logger.info(f"Received LLM response for chat {message['chat_id']} with content: {generated_message[:50]}...")
+            logger.info(
+                f"Received LLM response for chat {message['chat_id']} with content: {generated_message[:50]}..."
+            )
 
             # Instead of sending the message via StreamChat,
             # we now log the assistant's response into the database.
@@ -72,7 +78,7 @@ async def process_message(message: Dict[str, Any]) -> None:
 
             await log_audit(
                 action="LLM response processed & forwarded",
-                details=f"Chat ID: {message['chat_id']}, Response: {generated_message[:50]}..."
+                details=f"Chat ID: {message['chat_id']}, Response: {generated_message[:50]}...",
             )
 
             logger.info(f"Successfully processed message for chat {message['chat_id']}")
@@ -91,7 +97,7 @@ async def log_message(chat_id: str, content: str, user_message: bool) -> None:
             chat_id=chat_id,
             content=content,
             user_message=user_message,
-            timestamp=datetime.utcnow()
+            timestamp=datetime.utcnow(),
         )
         session.add(new_message)
         await session.commit()
@@ -104,7 +110,7 @@ async def log_audit(action: str, details: str) -> None:
             log_id=uuid.uuid4(),
             action=action,
             details=details,
-            timestamp=datetime.utcnow()
+            timestamp=datetime.utcnow(),
         )
         session.add(new_log)
         await session.commit()
@@ -115,7 +121,9 @@ async def callback(ch, method, properties, body):
     try:
         message = json.loads(body.decode())
         # Log that a message has been picked up from the queue
-        logger.info(f"Picked up message from queue for processing: chat_id: {message.get('chat_id')}")
+        logger.info(
+            f"Picked up message from queue for processing: chat_id: {message.get('chat_id')}"
+        )
         await process_message(message)
         await ch.basic_ack(delivery_tag=method.delivery_tag)
     except Exception as e:
