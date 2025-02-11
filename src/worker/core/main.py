@@ -10,8 +10,6 @@ from typing import Any, Dict
 import pika
 from dotenv import load_dotenv
 from openai import OpenAI
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import declarative_base, sessionmaker
 
 from common.db.connect import get_session as get_db_session
 from common.db.models import Log, Message
@@ -37,7 +35,8 @@ async def process_message(message: Dict[str, Any]) -> None:
 
         if user_message:
             logger.info(
-                f"Picked up user message for processing for chat {message['chat_id']}"
+                "Picked up user message for processing for chat %s",
+                message["chat_id"]
             )
 
             # Define the system prompt explicitly.
@@ -61,7 +60,9 @@ async def process_message(message: Dict[str, Any]) -> None:
             logger.info(f"Sending messages to LLM: {messages_payload}")
 
             logger.info(
-                f"Sending request to LLM for chat: {message['chat_id']} with content: {user_content[:50]}..."
+                "Sending request to LLM for chat: %s with content: %s...",
+                message["chat_id"],
+                user_content[:50]
             )
             response = await client.chat.completions.create(
                 model="gpt-4o-mini", messages=messages_payload, stream=False

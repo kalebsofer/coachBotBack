@@ -1,10 +1,9 @@
-import asyncio
 import logging
 import os
 import uuid
 
 from dotenv import load_dotenv
-from fastapi import Body, Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from openai import OpenAI
 
@@ -19,7 +18,7 @@ from common.db.connect import wait_for_db
 from common.db.crud import chat as chat_crud
 from common.db.crud import log as log_crud
 from common.db.crud import message as message_crud
-from common.db.schemas import ChatCreate, ChatRead, LogCreate, MessageCreate
+from common.db.schemas import ChatCreate, LogCreate, MessageCreate
 
 from .logging_config import configure_logging
 from .services import ChatService
@@ -264,7 +263,9 @@ async def create_chat(chat_data: ChatCreate, db: AsyncSession = Depends(get_db))
     try:
         new_chat = await chat_crud.create(db, obj_in=chat_data)
         logger.info(
-            f"Created new chat with chat_id: {new_chat.chat_id} for user {chat_data.user_id}"
+            "Created new chat with chat_id: %s for user %s",
+            new_chat.chat_id,
+            chat_data.user_id,
         )
         return {"chat_id": str(new_chat.chat_id)}
     except Exception as e:
