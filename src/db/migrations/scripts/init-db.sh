@@ -23,16 +23,6 @@ psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" <<-EOSQL
         END IF;
     END
     \$\$;
-
-    CREATE TABLE IF NOT EXISTS users (
-        user_id UUID PRIMARY KEY,
-        username TEXT NOT NULL,
-        email TEXT NOT NULL,
-        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    );
-    -- Insert a test user (as defined in frontend)
-    INSERT INTO users (user_id, username, email, created_at)
-    VALUES ('d62a2f99-e89b-43ad-b4ba-ec3826266410', 'testuser', 'test@example.com', NOW());
 EOSQL
 
 echo "Database created or already exists"

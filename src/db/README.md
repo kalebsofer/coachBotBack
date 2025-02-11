@@ -93,3 +93,35 @@ docker-compose up -d postgres
 # View logs
 docker-compose logs -f postgres
 ```
+
+## Registering The PostgreSQL Server in pgAdmin
+
+To manage your PostgreSQL databases using pgAdmin, follow these steps:
+
+1. **Open pgAdmin:**  
+   Launch pgAdmin in your browser. If you're using Docker, it is often available at a URL such as `http://localhost:5050`.
+
+2. **Log In:**  
+   Use the default credentials from your `.env` file:
+   - **Email:** `PGADMIN_DEFAULT_EMAIL` (e.g., `test@test.com`)
+   - **Password:** `PGADMIN_DEFAULT_PASSWORD` (e.g., `test`)
+
+3. **Register a New Server:**  
+   In the pgAdmin sidebar, right-click on "Servers" and select "Create" → "Server...".
+
+4. **Configure the Server Registration:**  
+   In the "Create - Server" dialog:
+   - **General Tab:**  
+     - **Name:** Provide a friendly name for the server (e.g., "Coach Bot Database").
+
+   - **Connection Tab:**  
+     - **Host name/address:** Use the host value from your `.env`, e.g., `POSTGRES_HOST` (typically `postgres` in a Docker network).
+     - **Port:** Default PostgreSQL port is `5432`.
+     - **Maintenance database:** Use the database name from `POSTGRES_DB` (e.g., `coach_bot`).
+     - **Username:** Use `POSTGRES_USER` (e.g., `postgres`).
+     - **Password:** Use `POSTGRES_PASSWORD` (e.g., `postgrespword`).
+
+5. **Save and Connect:**  
+   Click "Save" to register the new server. You should now see your PostgreSQL server listed in the pgAdmin UI and be able to browse databases, run queries, and manage schema changes.
+
+These steps allow you to connect pgAdmin to the same PostgreSQL instance used by the Coach Bot system.

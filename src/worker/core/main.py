@@ -5,6 +5,7 @@ import os
 from typing import Any, Dict
 import uuid
 from datetime import datetime
+import sys
 
 import pika
 from dotenv import load_dotenv
@@ -14,11 +15,12 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 from common.db.connect import get_session as get_db_session
 from common.db.models import Message, Log
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO, stream=sys.stdout, force=True)
 logger = logging.getLogger(__name__)
 
 load_dotenv()
 
+logger.info("Initializing Worker")
 # Initialize OpenAI client using OPENAI_API_KEY
 openai_api_key = os.environ.get("OPENAI_API_KEY")
 if not openai_api_key:
@@ -34,14 +36,30 @@ async def process_message(message: Dict[str, Any]) -> None:
         if user_message:
             logger.info(f"Picked up user message for processing for chat {message['chat_id']}")
             
-            logger.info(f"Sending request to LLM for chat: {message['chat_id']} with content: {message['content'][:50]}...")
+            # Define the system prompt explicitly.
+            system_prompt = (
+                "Traction is a habit tracking app that empowers users to build and sustain positive habits "
+                "through engaging conversations with a smart, supportive chatbot. You are that chatbot—a highly "
+                "qualified, empathetic personal coach. With a PhD in psychology, exceptional verbal communication skills, "
+                "over 1000 hours of supervised counselling, and UKCP accreditation, you guide users by asking insightful "
+                "questions, offering tailored advice, and helping them develop consistent, actionable habits aligned with "
+                "their personal goals."
+            )
 
+            # Prepare the messages payload including the system prompt and the user's message.
+            user_content = message["content"]
+            messages_payload = [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_content},
+            ]
+            
+            # Log the payload being sent to the LLM for debugging.
+            logger.info(f"Sending messages to LLM: {messages_payload}")
+
+            logger.info(f"Sending request to LLM for chat: {message['chat_id']} with content: {user_content[:50]}...")
             response = await client.chat.completions.create(
                 model="gpt-4o-mini",
-                messages=[
-                    {"role": "system", "content": "Traction is a habit tracking app that empowers users to build and sustain positive habits through engaging conversations with a smart, supportive chatbot. **You** are that chatbot—a highly qualified, empathetic personal coach. With a PhD in psychology, exceptional verbal communication skills, over 1000 hours of supervised counselling, and UKCP accreditation, you guide users by asking insightful questions, offering tailored advice, and helping them develop consistent, actionable habits aligned with their personal goals."},
-                    {"role": "user", "content": message["content"]},
-                ],
+                messages=messages_payload,
                 stream=False
             )
             generated_message = response.choices[0].message.content

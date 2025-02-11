@@ -55,9 +55,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# After your existing imports, add the following dummy implementation:
-# -----------------------------------------------------------
-# Dummy chat client to satisfy ChatService dependency since StreamChat is removed.
+# Dummy chat client to satisfy ChatService dependency while StreamChat is removed.
 class DummyChatClient:
     def channel(self, channel_type, channel_id):
         class DummyChannel:
@@ -80,7 +78,6 @@ async def startup_event():
     logger.info("=== API Service Startup ===")
     logger.info("Checking environment variables...")
     
-    # Verify required environment variables
     required_vars = ["DATABASE_URL", "OPENAI_API_KEY", "STREAM_API_KEY"]
     for var in required_vars:
         if os.getenv(var):
@@ -122,7 +119,6 @@ class UserInput(BaseModel):
     chat_id: str = Field(..., min_length=1)
 
 
-# Create crud container
 class CrudOperations:
     def __init__(self):
         self.log = log_crud
@@ -155,7 +151,7 @@ class MessageRequest(BaseModel):
 @app.post("/api/v1/chat/message")
 async def send_message(message: MessageRequest, db: AsyncSession = Depends(get_db)):
     try:
-        # Step 1: Receive and Validate Input
+        # Receive and Validate Input
         logger.info(
             f"Received user message from frontend - user_id: {message.user_id}, "
             f"chat_id: {message.chat_id}, content: {message.content[:50]}..."
@@ -169,7 +165,7 @@ async def send_message(message: MessageRequest, db: AsyncSession = Depends(get_d
             raise HTTPException(status_code=400, detail="Invalid UUID format") from ve
 
         try:
-            # Step 2: Persist in PostgreSQL (Saving full message details)
+            # Persist in PostgreSQL (Saving full message details)
             db_message = await message_crud.create(
                 db,
                 obj_in=MessageCreate(
@@ -184,7 +180,7 @@ async def send_message(message: MessageRequest, db: AsyncSession = Depends(get_d
             raise HTTPException(status_code=500, detail="Database error") from db_error
 
         try:
-            # (Optional) Create a log entry to record message sending for auditing purposes
+            # Create a log entry to record message sending for auditing purposes
             await log_crud.create(
                 db,
                 obj_in=LogCreate(
@@ -198,7 +194,7 @@ async def send_message(message: MessageRequest, db: AsyncSession = Depends(get_d
             logger.error(f"Log creation error: {str(log_error)}")
             # Don't fail if logging fails
 
-        # Step 3: Dispatch to Downstream Systems (e.g., forward to message queue)
+        # Dispatch to Downstream Systems (e.g., forward to message queue)
         logger.info(
             f"Forwarding message to message queue - user_id: {user_id}, "
             f"chat_id: {chat_id}, content: {message.content[:50]}..."
@@ -217,7 +213,7 @@ async def send_message(message: MessageRequest, db: AsyncSession = Depends(get_d
                 db,
                 obj_in=MessageCreate(
                     chat_id=chat_id,
-                    user_id=user_id,  # or a special AI user ID
+                    user_id=user_id,
                     content=ai_response,
                 ),
             )
@@ -227,7 +223,7 @@ async def send_message(message: MessageRequest, db: AsyncSession = Depends(get_d
                 "message_id": str(db_message.message_id),
                 "chat_id": str(chat_id),
                 "user_id": str(user_id),
-                "content": ai_response,  # Return AI response instead of user message
+                "content": ai_response,
             }
 
         except Exception as ai_error:
@@ -265,3 +261,26 @@ async def create_chat(chat_data: ChatCreate, db: AsyncSession = Depends(get_db))
     except Exception as e:
         logger.error(f"Error creating chat: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail="Could not create chat")
+
+
+@app.get("/api/v1/chats/{chat_id}")
+async def get_chat(chat_id: str, db: AsyncSession = Depends(get_db)):
+    # Retrieve the chat instance. Ensure your chat_crud.get includes an eager load of messages.
+    chat = await chat_crud.get(db, id=uuid.UUID(chat_id))
+    if not chat:
+        raise HTTPException(status_code=404, detail="Chat not found")
+    
+    # Transform the messages to match the frontend expected format.
+    messages = []
+    for msg in chat.messages:
+        # Determine role based on the user_message boolean
+        role = "user" if msg.user_message else "assistant"
+        messages.append({
+            "role": role,
+            "content": msg.content,
+            "timestamp": msg.timestamp.isoformat() if msg.timestamp else None,
+        })
+    return messages
+
+logging.basicConfig(level=logging.INFO)
+logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
