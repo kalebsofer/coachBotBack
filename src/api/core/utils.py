@@ -6,7 +6,7 @@ import httpx
 logger = logging.getLogger(__name__)
 
 
-async def check_api_health(base_url: str = "http://localhost:8000") -> bool:
+async def check_api_health(base_url: str = "http://95.216.214.173:8000") -> bool:
     """Check if API is running and list available routes."""
     try:
         async with httpx.AsyncClient() as client:

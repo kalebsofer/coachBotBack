@@ -2,50 +2,129 @@ import asyncio
 import json
 import logging
 import os
+import sys
+import uuid
+from datetime import datetime
 from typing import Any, Dict
 
 import pika
 from dotenv import load_dotenv
 from openai import OpenAI
-from stream_chat import StreamChat
 
-logging.basicConfig(level=logging.INFO)
+from common.db.connect import get_session as get_db_session
+from common.db.models import Log, Message
+
+logging.basicConfig(level=logging.INFO, stream=sys.stdout, force=True)
 logger = logging.getLogger(__name__)
 
 load_dotenv()
 
-openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-stream_client = StreamChat(
-    api_key=os.getenv("STREAM_API_KEY"),
-    api_secret=os.getenv("STREAM_SECRET"),
-    location="dublin",
-)
+logger.info("Initializing Worker")
+# Initialize OpenAI client using OPENAI_API_KEY
+openai_api_key = os.environ.get("OPENAI_API_KEY")
+if not openai_api_key:
+    raise Exception("OPENAI_API_KEY is not set in the environment.")
+
+client = OpenAI(api_key=openai_api_key)
 
 
 async def process_message(message: Dict[str, Any]) -> None:
     """Process a message from the queue."""
     try:
-        response = await openai_client.chat.completions.create(
-            model="gpt-4", messages=[{"role": "user", "content": message["content"]}]
-        )
-        generated_message = response.choices[0].message.content
+        user_message = message.get("user_message", True)
 
-        channel = stream_client.channel("messaging", message["chat_id"])
-        await channel.create(data={"members": [message["user_id"]]})
-        await channel.send_message(
-            {"text": generated_message}, user_id=message["user_id"]
-        )
+        if user_message:
+            logger.info(
+                "Picked up user message for processing for chat %s",
+                message["chat_id"]
+            )
 
-        logger.info(f"Successfully processed message for chat {message['chat_id']}")
+            # Define the system prompt explicitly.
+            system_prompt = (
+                "Traction is a habit tracking app that empowers users to build and sustain positive habits "
+                "through engaging conversations with a smart, supportive chatbot. You are that chatbot—a highly "
+                "qualified, empathetic personal coach. With a PhD in psychology, exceptional verbal communication skills, "
+                "over 1000 hours of supervised counselling, and UKCP accreditation, you guide users by asking insightful "
+                "questions, offering tailored advice, and helping them develop consistent, actionable habits aligned with "
+                "their personal goals."
+            )
+
+            # Prepare the messages payload including the system prompt and the user's message.
+            user_content = message["content"]
+            messages_payload = [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_content},
+            ]
+
+            # Log the payload being sent to the LLM for debugging.
+            logger.info(f"Sending messages to LLM: {messages_payload}")
+
+            logger.info(
+                "Sending request to LLM for chat: %s with content: %s...",
+                message["chat_id"],
+                user_content[:50]
+            )
+            response = await client.chat.completions.create(
+                model="gpt-4o-mini", messages=messages_payload, stream=False
+            )
+            generated_message = response.choices[0].message.content
+
+            logger.info(
+                f"Received LLM response for chat {message['chat_id']} with content: {generated_message[:50]}..."
+            )
+
+            # Instead of sending the message via StreamChat,
+            # we now log the assistant's response into the database.
+            await log_message(message["chat_id"], generated_message, user_message=False)
+
+            await log_audit(
+                action="LLM response processed & forwarded",
+                details=f"Chat ID: {message['chat_id']}, Response: {generated_message[:50]}...",
+            )
+
+            logger.info(f"Successfully processed message for chat {message['chat_id']}")
+        else:
+            logger.info(f"Received system message for chat {message['chat_id']}")
     except Exception as e:
         logger.error(f"Error processing message: {str(e)}", exc_info=True)
         raise
+
+
+async def log_message(chat_id: str, content: str, user_message: bool) -> None:
+    """Log a message in the Messages table."""
+    async for session in get_db_session():
+        new_message = Message(
+            message_id=uuid.uuid4(),
+            chat_id=chat_id,
+            content=content,
+            user_message=user_message,
+            timestamp=datetime.utcnow(),
+        )
+        session.add(new_message)
+        await session.commit()
+
+
+async def log_audit(action: str, details: str) -> None:
+    """Insert an audit log record into the Logs table."""
+    async for session in get_db_session():
+        new_log = Log(
+            log_id=uuid.uuid4(),
+            action=action,
+            details=details,
+            timestamp=datetime.utcnow(),
+        )
+        session.add(new_log)
+        await session.commit()
 
 
 async def callback(ch, method, properties, body):
     """Process messages from RabbitMQ."""
     try:
         message = json.loads(body.decode())
+        # Log that a message has been picked up from the queue
+        logger.info(
+            f"Picked up message from queue for processing: chat_id: {message.get('chat_id')}"
+        )
         await process_message(message)
         await ch.basic_ack(delivery_tag=method.delivery_tag)
     except Exception as e:
@@ -55,7 +134,7 @@ async def callback(ch, method, properties, body):
 
 async def main():
     """Main function to run the worker."""
-    rabbitmq_host = os.getenv("RABBITMQ_HOST", "localhost")
+    rabbitmq_host = os.getenv("RABBITMQ_HOST", "95.216.214.173")
     queue_name = os.getenv("QUEUE_NAME", "chat_queue")
 
     try:

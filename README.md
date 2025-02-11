@@ -89,6 +89,43 @@ poetry run uvicorn .api.main:app --reload
 
 The API will be available at `http://localhost:8000`
 
+### Service Dependencies and Deployment
+
+When rebuilding or deploying services, it's important to maintain the correct dependency order:
+
+Dependencies Map:
+1. Base Services (no dependencies):
+   - postgres
+   - rabbitmq
+   - loki
+
+2. Core Services:
+   - api (depends on: postgres, rabbitmq)
+   - worker (depends on: rabbitmq)
+   - pgadmin (depends on: postgres)
+
+3. Monitoring:
+   - prometheus (depends on: api, worker)
+   - grafana (depends on: prometheus, loki)
+
+4. Frontend:
+   - frontend (depends on: api)
+
+Common Rebuild Commands:
+```bash
+# Rebuild and restart API and its dependents
+docker compose up -d --force-recreate api frontend prometheus
+
+# Rebuild worker and its dependents
+docker compose up -d --force-recreate worker prometheus
+
+# Rebuild monitoring stack
+docker compose up -d --force-recreate prometheus grafana
+
+# Rebuild postgres and its dependents
+docker compose up -d --force-recreate postgres api pgadmin
+```
+
 ### Running Tests
 
 ```bash

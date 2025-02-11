@@ -21,6 +21,8 @@ gunicorn = "^21.2.0"
 coach-bot-db = { path = "../db" }
 httpx = "^0.24.1"
 alembic = "^1.13.1"
+prometheus-fastapi-instrumentator = "^6.1.0"
+psycopg2-binary = "2.9.10"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^8.0.2"

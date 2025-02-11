@@ -9,18 +9,15 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Copy dependency files first
 COPY src/worker/pyproject.toml src/worker/poetry.lock ./
 
-# Install dependencies
 RUN pip install poetry && \
     poetry config virtualenvs.create false && \
     poetry install --no-root
 
-# Then copy the source code
 COPY src/worker/core ./core
-COPY src/worker/tests ./tests
+COPY src/common/ /app/common/
 
 ENV PYTHONPATH=/app
 
-CMD ["python", "-m", "core.main"] 
+CMD ["poetry", "run", "python", "-m", "core.main"] 

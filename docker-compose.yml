@@ -3,17 +3,23 @@ services:
     container_name: coach-bot-rabbitmq
     image: rabbitmq:3-management
     ports:
-      - "5672:5672"  # AMQP protocol
-      - "15672:15672"  # Management UI
+      - "5672:5672" # AMQP protocol
+      - "15672:15672" # Management UI
+    volumes:
+      - rabbitmq_logs:/var/log/rabbitmq
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      test: [ "CMD", "rabbitmq-diagnostics", "check_port_connectivity" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     logging:
-      driver: loki
+      driver: json-file
       options:
-        loki-url: "http://loki:3100/loki/api/v1/push"
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - coach-bot-network
 
   api:
     container_name: coach-bot-api
@@ -24,12 +30,24 @@ services:
       - "8000:8000"
     env_file: .env
     depends_on:
+      postgres:
+        condition: service_healthy
       rabbitmq:
         condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: "no"
     logging:
       driver: loki
       options:
-        loki-url: "http://loki:3100/loki/api/v1/push"
+        loki-url: "http://localhost:3100/loki/api/v1/push"
+    networks:
+      - coach-bot-network
+    command: [ "./wait-for-it.sh", "postgres", "uvicorn", "api.core.main:app", "--host", "0.0.0.0", "--port", "8000" ]
 
   worker:
     container_name: coach-bot-worker
@@ -37,15 +55,19 @@ services:
       context: .
       dockerfile: docker/worker/Dockerfile
     env_file: .env
-    environment:
-      - RABBITMQ_HOST=rabbitmq
     depends_on:
+      postgres:
+        condition: service_healthy
       rabbitmq:
         condition: service_healthy
     logging:
       driver: loki
       options:
-        loki-url: "http://loki:3100/loki/api/v1/push"
+        loki-url: "http://localhost:3100/loki/api/v1/push"
+    networks:
+      - coach-bot-network
+    environment:
+      - RABBITMQ_HOST=rabbitmq
 
   postgres:
     container_name: coach-bot-postgres
@@ -57,21 +79,17 @@ services:
     env_file: .env
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./src/db/config/postgresql.conf:/etc/postgresql/postgresql.conf
+      - ./src/db/config/pg_hba.conf:/etc/postgresql/pg_hba.conf
+    command: [ "postgres", "-c", "config_file=/etc/postgresql/postgresql.conf" ]
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $POSTGRES_USER"]
-      interval: 30s
-      timeout: 10s
+      test: [ "CMD", "pg_isready", "-U", "postgres" ]
+      interval: 10s
+      timeout: 5s
       retries: 5
-    environment:
-      - PYTHONPATH=/app/src
-      - PYTHONUNBUFFERED=1
-    entrypoint: ["docker-entrypoint.sh"]  # Use the default entrypoint
-    command: ["postgres"]  # Start the PostgreSQL server
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+      start_period: 30s
+    networks:
+      - coach-bot-network
 
   pgadmin:
     container_name: coach-bot-pgadmin
@@ -85,7 +103,9 @@ services:
     logging:
       driver: loki
       options:
-        loki-url: "http://loki:3100/loki/api/v1/push"
+        loki-url: "http://localhost:3100/loki/api/v1/push"
+    networks:
+      - coach-bot-network
 
   prometheus:
     container_name: coach-bot-prometheus
@@ -95,19 +115,31 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - ./src/monitoring/prometheus:/etc/prometheus
       - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
     depends_on:
-      - api
-      - worker
+      api:
+        condition: service_healthy
+      worker:
+        condition: service_started
     healthcheck:
-      test: ["CMD", "wget", "--spider", "http://localhost:9090/-/healthy"]
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:9090/-/healthy || exit 1" ]
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 20s
+    networks:
+      - monitoring
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+        compress: "true"
 
   loki:
     container_name: coach-bot-loki
@@ -122,8 +154,10 @@ services:
       - loki_wal:/wal
     command: -config.file=/etc/loki/loki-config.yml
     user: "root"
+    networks:
+      - coach-bot-network
     healthcheck:
-      test: ["CMD", "wget", "--spider", "http://localhost:3100/ready"]
+      test: [ "CMD", "wget", "--spider", "http://loki:3100/ready" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -135,6 +169,7 @@ services:
       dockerfile: docker/monitoring/grafana/Dockerfile
     ports:
       - "3000:3000"
+    env_file: .env
     volumes:
       - ./src/monitoring/grafana/provisioning:/etc/grafana/provisioning
       - grafana_data:/var/lib/grafana
@@ -143,12 +178,10 @@ services:
         condition: service_healthy
       loki:
         condition: service_healthy
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
-      - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_INSTALL_PLUGINS=grafana-piechart-panel,grafana-worldmap-panel
+    networks:
+      - coach-bot-network
     healthcheck:
-      test: ["CMD", "wget", "--spider", "http://localhost:3000/api/health"]
+      test: [ "CMD", "wget", "--spider", "http://grafana:3000/api/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -163,19 +196,26 @@ services:
     environment:
       - API_URL=http://api:8000
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     logging:
       driver: loki
       options:
-        loki-url: "http://loki:3100/loki/api/v1/push"
+        loki-url: "http://localhost:3100/loki/api/v1/push"
+    networks:
+      - coach-bot-network
 
 networks:
-  default:
-    name: coach-bot-network 
+  coach-bot-network:
+    name: coach-bot-network
+    driver: bridge
+  monitoring:
+    driver: bridge
 
 volumes:
   postgres_data:
   prometheus_data:
   loki_data:
   loki_wal:
-  grafana_data: 
+  grafana_data:
+  rabbitmq_logs:

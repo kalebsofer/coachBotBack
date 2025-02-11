@@ -1,100 +1,88 @@
 # Database Service
 
-The database service manages data persistence and access for the Coach Bot system using PostgreSQL, SQLAlchemy, and Alembic.
+The database service manages data persistence for the Coach Bot system using PostgreSQL and SQLAlchemy.
 
 ## Core Components
 
 ### Models (`core/models.py`)
-- SQLAlchemy ORM models defining database schema
+- SQLAlchemy ORM models defining three main tables:
+  - Users: Stores user information
+  - Chats: Manages chat sessions
+  - Messages: Stores chat messages
 - Uses UUID primary keys for distributed safety
-- Implements common mixins for timestamps and IDs
-- Handles relationships between entities (User, Chat, Message, Log)
+- Implements timestamps for tracking creation time
 
 ### Database Connection (`core/database.py`)
 - Manages async database connections using SQLAlchemy 2.0
-- Implements connection pooling for performance
-- Provides session management and dependency injection
 - Uses asyncpg for better async performance
-
-### CRUD Operations (`core/crud.py`)
-CRUD (Create, Read, Update, Delete) operations provide:
-- Clean interface for database interactions
-- Type-safe data access through generics
-- Consistent error handling
-- Business logic separation
-- Reusable base operations
-- Model-specific query methods
+- Provides session management and dependency injection
+- Configurable through environment variables
 
 ### Schemas (`core/schemas.py`)
 - Pydantic models for data validation
 - Separate schemas for creation and reading
 - Type conversion and validation
 - API request/response models
-- SQLAlchemy model serialization
 
 ### Migrations (`migrations/`)
 - Alembic for database schema version control
-- Automatic migration generation
+- Automatic table creation on startup
 - Safe database updates
 - Rollback capability
-- Migration history tracking
 
-## Technology Stack
+## Stack
 
 ### PostgreSQL
+- Version: 16
 - Robust relational database
 - Strong UUID support
-- JSONB for flexible storage
+- Timezone-aware timestamps
 
 ### SQLAlchemy
-- Python's most powerful ORM
-- Type hints and async support
-- Complex query capabilities
+- Version: 2.0
+- Async support with asyncpg
+- Type hints and validation
 - Connection pooling
-- Transaction management
 
 ### Alembic
 - Database migration tool
-- Works seamlessly with SQLAlchemy
-- Supports both auto and manual migrations
-- Dependency resolution
-- Branch management
+- Works with SQLAlchemy
+- Automatic migration application
+- Version control for schema changes
 
-### Pydantic
-- Data validation using Python type annotations
-- Automatic serialization/deserialization
-- Integration with FastAPI
-- Custom validators
-- Schema documentation
+## Configuration
+
+### Environment Variables
+Required variables in root `.env`:
+```env
+DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/coach_bot
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_DB=coach_bot
+```
+
+### PostgreSQL Configuration
+Basic configuration in `config/`:
+- `postgresql.conf`: Database settings
+- `pg_hba.conf`: Access control
 
 ## Development
 
 ### Prerequisites
 - Python 3.12+
-- Poetry for dependency management
 - PostgreSQL 16+
 - Docker and Docker Compose
 
-### Environment Setup
-```bash
-# Install dependencies
-poetry install
-
-# Set up environment variables
-cp .env.example .env
-# Edit .env with your credentials
-```
-
 ### Database Operations
 ```bash
-# Create migration
-poetry run alembic revision --autogenerate -m "description"
-
 # Apply migrations
-poetry run alembic upgrade head
+alembic upgrade head
 
 # Rollback migration
-poetry run alembic downgrade -1
+alembic downgrade -1
+
+# Create new migration
+alembic revision --autogenerate -m "description"
 ```
 
 ### Docker
@@ -106,10 +94,34 @@ docker-compose up -d postgres
 docker-compose logs -f postgres
 ```
 
-## Configuration
+## Registering The PostgreSQL Server in pgAdmin
 
-### Environment Variables
-- `DATABASE_URL`: PostgreSQL connection string
-- `POSTGRES_USER`: Database user
-- `POSTGRES_PASSWORD`: Database password
-- `POSTGRES_DB`: Database name
+To manage your PostgreSQL databases using pgAdmin, follow these steps:
+
+1. **Open pgAdmin:**  
+   Launch pgAdmin in your browser. If you're using Docker, it is often available at a URL such as `http://localhost:5050`.
+
+2. **Log In:**  
+   Use the default credentials from your `.env` file:
+   - **Email:** `PGADMIN_DEFAULT_EMAIL` (e.g., `test@test.com`)
+   - **Password:** `PGADMIN_DEFAULT_PASSWORD` (e.g., `test`)
+
+3. **Register a New Server:**  
+   In the pgAdmin sidebar, right-click on "Servers" and select "Create" → "Server...".
+
+4. **Configure the Server Registration:**  
+   In the "Create - Server" dialog:
+   - **General Tab:**  
+     - **Name:** Provide a friendly name for the server (e.g., "Coach Bot Database").
+
+   - **Connection Tab:**  
+     - **Host name/address:** Use the host value from your `.env`, e.g., `POSTGRES_HOST` (typically `postgres` in a Docker network).
+     - **Port:** Default PostgreSQL port is `5432`.
+     - **Maintenance database:** Use the database name from `POSTGRES_DB` (e.g., `coach_bot`).
+     - **Username:** Use `POSTGRES_USER` (e.g., `postgres`).
+     - **Password:** Use `POSTGRES_PASSWORD` (e.g., `postgrespword`).
+
+5. **Save and Connect:**  
+   Click "Save" to register the new server. You should now see your PostgreSQL server listed in the pgAdmin UI and be able to browse databases, run queries, and manage schema changes.
+
+These steps allow you to connect pgAdmin to the same PostgreSQL instance used by the Coach Bot system.

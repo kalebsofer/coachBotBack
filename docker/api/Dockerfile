@@ -5,21 +5,26 @@ WORKDIR /app
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     gcc \
-    libpq-dev && \
+    libpq-dev \
+    curl \
+    postgresql-client && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Copy entire source directories
 COPY src/api/ /app/api/
 COPY src/db/ /app/db/
+COPY src/common/ /app/common/
 
 WORKDIR /app/api
 
-# Install dependencies
 RUN pip install poetry && \
     poetry config virtualenvs.create false && \
     poetry install --no-root
 
-ENV PYTHONPATH=/app
+# Make sure the script is executable
+RUN chmod +x wait-for-it.sh
 
-CMD ["poetry", "run", "uvicorn", "core.main:app", "--host", "0.0.0.0", "--port", "8000"]
+ENV PYTHONPATH=/app
+ENV PYTHONUNBUFFERED=1
+
+CMD ["poetry", "run", "uvicorn", "core.main:app", "--host", "0.0.0.0", "--port", "8000", "--log-level", "debug"]

@@ -16,10 +16,9 @@ class ChatService:
         self, user_id: str, message: str, chat_id: str
     ) -> ChatResponse:
         """Generate AI response and handle chat interactions."""
-        # Generate AI response
+
         ai_response = await self._get_ai_response(message)
 
-        # Send to chat
         await self._send_to_chat(chat_id, user_id, ai_response)
 
         return ChatResponse(
@@ -31,7 +30,7 @@ class ChatService:
     async def _get_ai_response(self, message: str) -> str:
         """Get response from AI service."""
         response = await self.ai_client.chat.completions.create(
-            model="gpt-4", messages=[{"role": "user", "content": message}]
+            model="gpt-4o-mini", messages=[{"role": "user", "content": message}]
         )
         return response.choices[0].message.content
 

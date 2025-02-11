@@ -1,1 +1,23 @@
-Generic single-database configuration.
+Alembic Migration System
+
+This directory contains database migrations for the Coach Bot system.
+
+Structure:
+- env.py: Configuration for Alembic migrations
+- versions/: Migration version files
+- scripts/: Database initialization scripts
+
+Migration Process:
+1. Migrations run automatically on container startup
+2. Uses async SQLAlchemy for better performance
+3. Supports both upgrade and downgrade operations
+4. Maintains version control of schema changes
+
+Key Files:
+- initial_migration.py: Creates base tables (users, chats, messages)
+- init-db.sh: Handles database initialization and migration application
+
+Usage:
+- Migrations apply automatically on container start
+- Manual migration commands available through alembic CLI
+- New migrations can be generated with --autogenerate flag
