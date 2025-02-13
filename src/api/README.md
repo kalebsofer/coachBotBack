@@ -1,6 +1,6 @@
 # API Service
 
-The API service handles HTTP requests, message processing, and integrations with OpenAI, Stream Chat, and the database.
+The API service handles HTTP requests, message processing, and integrations with OpenAI, a dummy chat client, and the database.
 
 ## Core Components
 
@@ -12,7 +12,7 @@ The API service handles HTTP requests, message processing, and integrations with
   - Chat management
 - Integrations with:
   - OpenAI for AI responses
-  - Stream Chat for real-time messaging
+  - A dummy chat client (in place of Stream Chat) for chat management
   - Database for persistence
 - Error handling and logging
 - CORS and middleware configuration
@@ -45,12 +45,6 @@ The API service handles HTTP requests, message processing, and integrations with
 - Async API calls
 - Error handling
 - Response processing
-
-### Stream Chat
-- Real-time messaging
-- Channel management
-- User authentication
-- Message synchronization
 
 ## Development
 
@@ -96,8 +90,6 @@ docker-compose logs -f api
 
 ### Environment Variables
 - `OPENAI_API_KEY`: OpenAI API key
-- `STREAM_API_KEY`: Stream Chat API key
-- `STREAM_SECRET`: Stream Chat secret
 - `ALLOWED_ORIGINS`: CORS allowed origins
 - `DATABASE_URL`: PostgreSQL connection string
 

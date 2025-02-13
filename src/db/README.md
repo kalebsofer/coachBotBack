@@ -55,10 +55,10 @@ The database service manages data persistence for the Coach Bot system using Pos
 ### Environment Variables
 Required variables in root `.env`:
 ```env
-DATABASE_URL=postgresql+asyncpg://postgres:postgres@postgres:5432/coach_bot
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
-POSTGRES_DB=coach_bot
+DATABASE_URL=postgresql+asyncpg://<POSTGRES_USER>:<POSTGRES_PASSWORD>@<POSTGRES_HOST>:<POSTGRES_PORT>/<POSTGRES_DB>
+POSTGRES_USER=<POSTGRES_USER>
+POSTGRES_PASSWORD=<POSTGRES_PASSWORD>
+POSTGRES_DB=<POSTGRES_DB>
 ```
 
 ### PostgreSQL Configuration
@@ -96,10 +96,8 @@ docker-compose logs -f postgres
 
 ## Registering The PostgreSQL Server in pgAdmin
 
-To manage your PostgreSQL databases using pgAdmin, follow these steps:
-
 1. **Open pgAdmin:**  
-   Launch pgAdmin in your browser. If you're using Docker, it is often available at a URL such as `http://localhost:5050`.
+   Launch pgAdmin in browser: `http://localhost:5050`.
 
 2. **Log In:**  
    Use the default credentials from your `.env` file:
@@ -112,16 +110,11 @@ To manage your PostgreSQL databases using pgAdmin, follow these steps:
 4. **Configure the Server Registration:**  
    In the "Create - Server" dialog:
    - **General Tab:**  
-     - **Name:** Provide a friendly name for the server (e.g., "Coach Bot Database").
+     - **Name:** Provide any name for the server (e.g., "Coach Bot Database").
 
    - **Connection Tab:**  
-     - **Host name/address:** Use the host value from your `.env`, e.g., `POSTGRES_HOST` (typically `postgres` in a Docker network).
-     - **Port:** Default PostgreSQL port is `5432`.
-     - **Maintenance database:** Use the database name from `POSTGRES_DB` (e.g., `coach_bot`).
-     - **Username:** Use `POSTGRES_USER` (e.g., `postgres`).
-     - **Password:** Use `POSTGRES_PASSWORD` (e.g., `postgrespword`).
-
-5. **Save and Connect:**  
-   Click "Save" to register the new server. You should now see your PostgreSQL server listed in the pgAdmin UI and be able to browse databases, run queries, and manage schema changes.
-
-These steps allow you to connect pgAdmin to the same PostgreSQL instance used by the Coach Bot system.
+     - **Host name/address:** Use host value `.env` (e.g., `<POSTGRES_HOST>`).
+     - **Port:** Default PostgreSQL port is `<POSTGRES_PORT>` (typically 5432).
+     - **Maintenance database:** Use database name from `POSTGRES_DB`.
+     - **Username:** Use `POSTGRES_USER`.
+     - **Password:** Use `POSTGRES_PASSWORD`

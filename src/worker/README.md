@@ -1,19 +1,19 @@
 # Worker Service
 
-The worker service is responsible for processing chat messages asynchronously through RabbitMQ. It handles AI responses using OpenAI's GPT-4 and manages message delivery via Stream Chat.
+The worker service is responsible for processing chat messages asynchronously through RabbitMQ. It handles AI responses using OpenAI's GPT-4o-mini model and logs the responses into the database for later retrieval.
 
 ## Functionality
 
 ### Message Processing
-- Consumes messages from RabbitMQ queue
-- Processes user messages using OpenAI's GPT-4
-- Delivers AI responses through Stream Chat
+- Consumes messages from the RabbitMQ queue
+- Processes user messages using OpenAI's GPT-4o-mini model
+- Logs AI-generated responses into the database
 - Handles message acknowledgment and error recovery
 
 ### Components
 - RabbitMQ Consumer: Listens for incoming chat messages
-- OpenAI Integration: Generates AI responses
-- Stream Chat: Delivers messages to users
+- OpenAI Integration: Generates AI responses using the GPT-4o-mini model
+- Database Logging: Persists AI responses and audit logs in the database
 - Error Handling: Manages failed messages with requeue capability
 
 ## Development
@@ -23,7 +23,6 @@ The worker service is responsible for processing chat messages asynchronously th
 - Poetry for dependency management
 - RabbitMQ
 - OpenAI API key
-- Stream Chat credentials
 
 ### Environment Setup
 ```bash
@@ -57,7 +56,7 @@ poetry run pytest tests/test_main.py
 
 ### Test Structure
 - `tests/test_main.py`: Tests for message processing and RabbitMQ integration
-- Mock integrations for OpenAI and Stream Chat
+- Mock integrations for OpenAI
 - Error handling and recovery scenarios
 
 ## Docker
@@ -92,6 +91,4 @@ docker-compose logs -f worker
 - `RABBITMQ_USER`: RabbitMQ username
 - `RABBITMQ_PASS`: RabbitMQ password
 - `QUEUE_NAME`: RabbitMQ queue name
-- `OPENAI_API_KEY`: OpenAI API key
-- `STREAM_API_KEY`: Stream Chat API key
-- `STREAM_SECRET`: Stream Chat API secret 
+- `OPENAI_API_KEY`: OpenAI API key 
