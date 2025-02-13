@@ -1,29 +1,34 @@
 # CoachBotBack
 
-Backend service for CoachBot, built with FastAPI and Python.
+## Overview
+
+CoachBotBack is the backend for CoachBot, an AI-powered coaching application. It uses FastAPI to serve HTTP API requests and includes a worker service for processing chat messages asynchronously via RabbitMQ. Responses are generated with OpenAI's GPT-4o-mini model, and data is stored in PostgreSQL using SQLAlchemy with Alembic for migrations. The project is managed with Poetry and uses pre-commit hooks for code formatting and linting.
 
 ## Project Structure
 
+The project is organized into several modules, or containers:
+
 ```
-coachBotBack/
+CoachBotBack/
 ├── src/
-│ └── /
-│ ├─── api/
-│ │     ├── __init__.py
-│ │     └── main.py
-│ └─── workers/
-│ │     ├── __init__.py
-│ │     └── main.py
-├── tests/
-├── docker/
-│ ├── api/
-│ │     ├── Dockerfile
-│ ├── workers/
-│ │     ├── Dockerfile
-├── .env.example
-├── .pre-commit-config.yaml
-├── .gitignore
-└── poetry.toml
+│   ├── api/              
+│   │   ├── core/         
+│   │   └── README.md     
+│   ├── worker/          
+│   │   ├── core/         
+│   │   └── README.md     
+│   └── db/               
+│       ├── core/         
+│       ├── migrations/   
+│       └── README.md     
+├── tests/               
+├── docker/              
+│   ├── api/            
+│   ├── worker/         
+│   └── db/             
+├── .env.example                   
+└── docker-compose.yml
+          
 ```
 
 ## Local Dev
